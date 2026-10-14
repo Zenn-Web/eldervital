@@ -1,6 +1,5 @@
 import type {Role} from "@/lib/supabase/client";
 import { notImplemented } from "./not-implemented";
-import { link } from "fs";
 
 /**
  * Pairing QR. QR hanya berisi URL dengan token sementara di fragmen (#t=...), tanpa

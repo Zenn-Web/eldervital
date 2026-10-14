@@ -1,3 +1,4 @@
+"use client";
 import type { Session } from "@supabase/supabase-js";
 import type { Role } from "@/lib/supabase/client";
 

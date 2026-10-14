@@ -10,6 +10,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { newExamId, toSaveArgs, type SaveExaminationArgs } from "@/lib/exam/payload";
+import { answerChoice, evaluate, startSession, treeV1 } from "@/lib/screening";
 
 const migration = readFileSync(
   fileURLToPath(new URL("../migrations/0001_init.sql", import.meta.url)),
@@ -233,6 +235,16 @@ describe("persetujuan hubungan", () => {
     expect(links).toEqual([{ status: "pending" }]);
   });
 
+  it("lansia melihat nama caregiver yang menunggu persetujuan (untuk layar persetujuan)", async () => {
+    // Sama dengan embed listElderLinks: care_links -> caregivers(display_name).
+    await as(ids.elderA, { anonymous: true });
+    const r = await rows(
+      `select l.status, c.display_name from public.care_links l
+         left join public.caregivers c on c.id = l.caregiver_id`,
+    );
+    expect(r).toEqual([{ status: "pending", display_name: "Sinta" }]);
+  });
+
   it("caregiver tidak bisa menyetujui dirinya sendiri", async () => {
     await as(ids.careX);
     const id = (await rows("select id from public.care_links"))[0].id;
@@ -427,5 +439,60 @@ describe("permintaan bantuan", () => {
     const elder = await elderIdOf(ids.elderB);
     await as(ids.careY);
     await fails("insert into public.help_requests (elder_id) values ($1)", [elder]);
+  });
+});
+
+describe("payload penyimpanan dari klien", () => {
+  // Memanggil RPC dengan argumen bernama, sama seperti PostgREST (supabase.rpc), memakai
+  // payload yang dibuat toSaveArgs dari sesi mesin pohon keputusan yang sungguhan.
+  const JSONB = new Set(["p_reasons", "p_actions", "p_answers"]);
+  async function callSave(args: SaveExaminationArgs) {
+    const keys = Object.keys(args) as (keyof SaveExaminationArgs)[];
+    const sql = `select public.save_examination(${keys
+      .map((k, i) => `${k} => $${i + 1}${JSONB.has(k) ? "::jsonb" : ""}`)
+      .join(", ")}) id`;
+    const params = keys.map((k) => (JSONB.has(k) ? JSON.stringify(args[k]) : args[k]));
+    return (await rows(sql, params))[0].id as string;
+  }
+
+  function finished(steps: string[], mode: "mandiri" | "caregiver") {
+    const source = mode === "caregiver" ? "caregiver" : "lansia";
+    let s = startSession(treeV1, { mode });
+    for (const step of steps) s = answerChoice(treeV1, s, step, source);
+    return { session: s, result: evaluate(treeV1, s) };
+  }
+
+  it("pemeriksaan mandiri bertanda bahaya tersimpan lengkap dengan alasan yang bisa ditelusuri", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    const { session, result } = finished(["ya", "d_lt3", "f_rare", "ya"], "mandiri");
+    expect(result.status).toBe("red");
+    const id = newExamId();
+    await as(ids.elderB, { anonymous: true });
+    expect(await callSave(toSaveArgs(id, elder, session, result))).toBe(id);
+    // Kirim ulang dari antrean: tidak membuat data ganda.
+    await callSave(toSaveArgs(id, elder, session, result));
+
+    const [x] = await rows(
+      "select status, result_status, interrupted, is_simulated, reasons from public.examinations where id = $1",
+      [id],
+    );
+    expect(x).toMatchObject({ status: "terhenti", result_status: "red", interrupted: true, is_simulated: false });
+    expect(x.reasons).toEqual(JSON.parse(JSON.stringify(result.reasons)));
+    const answers = await rows(
+      "select position, question_id, source from public.exam_answers where examination_id = $1 order by position",
+      [id],
+    );
+    expect(answers.map((a) => a.question_id)).toEqual(session.answers.map((a) => a.nodeId));
+    expect(new Set(answers.map((a) => a.source))).toEqual(new Set(["lansia"]));
+  });
+
+  it("pemeriksaan mode caregiver tersimpan atas nama caregiver yang terhubung", async () => {
+    const elder = await elderIdOf(ids.elderB); // terhubung aktif dengan careY (tes sebelumnya)
+    const { session, result } = finished(["tidak", "c_no", "m_none"], "caregiver");
+    const id = newExamId();
+    await as(ids.careY);
+    await callSave(toSaveArgs(id, elder, session, result));
+    const [x] = await rows("select mode, caregiver_id, status, result_status from public.examinations where id = $1", [id]);
+    expect(x).toEqual({ mode: "caregiver", caregiver_id: ids.careY, status: "selesai", result_status: "green" });
   });
 });

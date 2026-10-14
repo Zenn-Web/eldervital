@@ -639,3 +639,51 @@ describe("transisi status permintaan bantuan (migrasi 0002)", () => {
     await fails("select public.check_help_request_transition()");
   });
 });
+
+describe("jadwal pengingat", () => {
+  // elderB terhubung aktif dengan careX dan careY (tes sebelumnya).
+  it("lansia membuat, mengubah lewat upsert per label, dan menghapus jadwalnya", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query(
+      "insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'Pagi','07:00'),($1,'Malam','19:00')",
+      [elder],
+    );
+    // Sama dengan saveReminders: upsert on conflict (elder_id, label).
+    await db.query(
+      `insert into public.reminder_schedules (elder_id, label, time_of_day, enabled) values ($1,'Pagi','06:30',false)
+       on conflict (elder_id, label) do update set time_of_day = excluded.time_of_day, enabled = excluded.enabled`,
+      [elder],
+    );
+    await db.query("delete from public.reminder_schedules where label = 'Malam'");
+    const r = await rows("select label, time_of_day::text t, enabled from public.reminder_schedules order by label");
+    expect(r).toEqual([{ label: "Pagi", t: "06:30:00", enabled: false }]);
+  });
+
+  it("nama jadwal tidak boleh kosong atau lebih dari 30 karakter", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'','08:00')", [elder]);
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,$2,'08:00')", [
+      elder,
+      "x".repeat(31),
+    ]);
+  });
+
+  it("caregiver terhubung hanya bisa membaca, tidak bisa mengubah", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.careY);
+    expect(await rows("select label from public.reminder_schedules")).toEqual([{ label: "Pagi" }]);
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'Siang','12:00')", [elder]);
+    // Update dan delete oleh caregiver: RLS menyaring baris, jadi tidak ada yang berubah.
+    expect(await rows("update public.reminder_schedules set enabled = true returning id")).toEqual([]);
+    expect(await rows("delete from public.reminder_schedules returning id")).toEqual([]);
+    await db.exec("reset role");
+    expect((await rows("select enabled from public.reminder_schedules"))[0].enabled).toBe(false);
+  });
+
+  it("lansia lain tidak melihat jadwal lansia ini", async () => {
+    await as(ids.elderA, { anonymous: true }); // profil elderA sudah dihapus: sesi tanpa profil
+    expect(await rows("select * from public.reminder_schedules")).toEqual([]);
+  });
+});

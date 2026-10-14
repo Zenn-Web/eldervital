@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /*
  * Sistem tampilan ElderVital.
  *
@@ -16,16 +20,18 @@
  */
 
 :root {
-  --paper: #f4efe6;
-  --surface: #fbf8f2;
-  --ink: #17231f;
-  --ink-soft: #44524d;
-  --line: #7a857f;
+  --paper: #F5EEE1;
+  --surface: #FFFBF4;
+  --ink: #1D2433;
+  --ink-soft: #5E6472;
+  --line: #DDD2BF;
 
-  --primary: #0e5a4c;
-  --primary-strong: #0a4a3e;
+  --primary: #2B3A6B;
+  --primary-strong: #1C284E;
   --on-primary: #ffffff;
-  --focus: #9a4400;
+  --sogan: #9A5B2E;
+  --sogan-strong: #7A4522;
+  --focus: #9A5B2E;
 
   --ok-bg: #dcebdd;
   --ok-ink: #134b24;
@@ -49,6 +55,8 @@
 
   --radius: 0.5rem;
   --tap: 3.75rem;
+  --tap-standard: 3rem;
+  --tap-lg: 4.25rem;
   --nav: 4.25rem;
   --measure: 40rem;
 

@@ -525,3 +525,60 @@ describe("riwayat yang dibaca caregiver (dashboard)", () => {
     expect(n).toBeGreaterThan(0);
   });
 });
+
+describe("alur permintaan bantuan (sesuai src/lib/help.ts)", () => {
+  // elderB terhubung aktif dengan careY (tes sebelumnya). careX dihubungkan juga di sini
+  // untuk mensimulasikan dua caregiver yang menerima permintaan yang sama.
+  let req: string;
+  // Update bersyarat yang sama dengan takeHelpRequest.
+  const take = (uid: string) =>
+    rows(
+      "update public.help_requests set status = 'taken', taken_by = $2, handled_at = now() where id = $1 and status = 'open' returning id",
+      [req, uid],
+    );
+
+  it("lansia membuat permintaan baru", async () => {
+    await pair(ids.elderB, ids.careX, true, false);
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    req = (await rows("insert into public.help_requests (elder_id) values ($1) returning id", [elder]))[0].id as string;
+    expect(req).toBeTruthy();
+  });
+
+  it("lansia tidak bisa menandai permintaannya sendiri sebagai ditanggapi atau selesai", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set status = 'taken' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'done' where id = $1", [req]);
+  });
+
+  it("caregiver tidak bisa membatalkan atau menanggapi atas nama caregiver lain", async () => {
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careX]);
+  });
+
+  it("dua caregiver menanggapi bersamaan: hanya yang pertama berhasil", async () => {
+    await as(ids.careY);
+    expect(await take(ids.careY)).toHaveLength(1);
+    await as(ids.careX);
+    expect(await take(ids.careX)).toHaveLength(0);
+    await db.exec("reset role");
+    const [r] = await rows("select status, taken_by from public.help_requests where id = $1", [req]);
+    expect(r).toEqual({ status: "taken", taken_by: ids.careY });
+  });
+
+  it("lansia melihat siapa yang menanggapi, lalu bisa membatalkan", async () => {
+    await as(ids.elderB, { anonymous: true });
+    const [r] = await rows(
+      `select h.status, c.display_name from public.help_requests h
+         left join public.caregivers c on c.id = h.taken_by where h.id = $1`,
+      [req],
+    );
+    expect(r).toEqual({ status: "taken", display_name: "Budi" });
+    const done = await rows(
+      "update public.help_requests set status = 'cancelled', handled_at = now() where id = $1 and status in ('open','taken') returning id",
+      [req],
+    );
+    expect(done).toHaveLength(1);
+  });
+});

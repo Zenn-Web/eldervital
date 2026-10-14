@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Bitter } from "next/font/google";
 import localFont from "next/font/local";
 import RegisterSW from "@/components/RegisterSW";
 import "./globals.css";
@@ -15,6 +16,13 @@ const sans = localFont({
   ],
   variable: "--font-sans",
   display: "swap",
+});
+
+const serif = Bitter({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -34,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={sans.variable}>
+    <html lang="id" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <a className="skip" href="#isi">
           Lewati ke isi utama

@@ -233,6 +233,16 @@ describe("persetujuan hubungan", () => {
     expect(links).toEqual([{ status: "pending" }]);
   });
 
+  it("lansia melihat nama caregiver yang menunggu persetujuan (untuk layar persetujuan)", async () => {
+    // Sama dengan embed listElderLinks: care_links -> caregivers(display_name).
+    await as(ids.elderA, { anonymous: true });
+    const r = await rows(
+      `select l.status, c.display_name from public.care_links l
+         left join public.caregivers c on c.id = l.caregiver_id`,
+    );
+    expect(r).toEqual([{ status: "pending", display_name: "Sinta" }]);
+  });
+
   it("caregiver tidak bisa menyetujui dirinya sendiri", async () => {
     await as(ids.careX);
     const id = (await rows("select id from public.care_links"))[0].id;

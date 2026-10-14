@@ -7,6 +7,7 @@ import type { ExaminationRecord } from "@/modules/caregiver/types";
 import type { ResultStatus } from "@/lib/screening";
 import StatusMark from "@/components/StatusMark";
 import { Badge } from "@/components/ui/badge";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/shared/Icons";
 
 type FilterStatus = "all" | "attention" | "stable";
 
@@ -107,9 +108,10 @@ export default function CaregiverHistoryPage() {
       <div className="flex items-center justify-between">
         <Link
           href="/caregiver"
-          className="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5"
+          className="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5 min-h-[44px]"
         >
-          &larr; Kembali ke Beranda Caregiver
+          <ChevronLeftIcon className="h-4 w-4" />
+          <span>Kembali ke Beranda Caregiver</span>
         </Link>
         <span className="text-xs text-ink-soft">
           Menampilkan {filteredExams.length} dari {allExams.length} catatan
@@ -130,7 +132,7 @@ export default function CaregiverHistoryPage() {
         <button
           type="button"
           onClick={() => setFilter("all")}
-          className={`px-3.5 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition-colors ${
+          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
             filter === "all"
               ? "bg-primary text-white font-bold"
               : "bg-surface text-ink-soft hover:bg-paper border border-line"
@@ -141,7 +143,7 @@ export default function CaregiverHistoryPage() {
         <button
           type="button"
           onClick={() => setFilter("attention")}
-          className={`px-3.5 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition-colors ${
+          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
             filter === "attention"
               ? "bg-warn-mark text-white font-bold"
               : "bg-surface text-ink-soft hover:bg-paper border border-line"
@@ -154,7 +156,7 @@ export default function CaregiverHistoryPage() {
         <button
           type="button"
           onClick={() => setFilter("stable")}
-          className={`px-3.5 py-1.5 text-xs sm:text-sm rounded-lg font-medium transition-colors ${
+          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
             filter === "stable"
               ? "bg-ok-mark text-white font-bold"
               : "bg-surface text-ink-soft hover:bg-paper border border-line"
@@ -233,12 +235,16 @@ export default function CaregiverHistoryPage() {
                   <button
                     type="button"
                     onClick={() => toggleExpand(exam.id)}
-                    className="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5"
+                    className="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus rounded-md px-1"
                   >
                     <span>
                       {isExpanded ? "Tutup Rincian Tanya-Jawab" : "Lihat Rincian Jawaban Lengkap"}
                     </span>
-                    <span aria-hidden="true">{isExpanded ? "&uarr;" : "&darr;"}</span>
+                    <ChevronRightIcon
+                      className={`h-4 w-4 transition-transform duration-150 ${
+                        isExpanded ? "-rotate-90" : "rotate-90"
+                      }`}
+                    />
                   </button>
                   <span className="text-[11px] text-ink-soft">
                     {exam.answers.length} pertanyaan tercatat

@@ -5,6 +5,13 @@ import type { ScreeningResult } from "@/lib/screening";
 import StatusMark from "./StatusMark";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  PhoneIcon,
+  AlertTriangleIcon,
+  CheckIcon,
+  RefreshIcon,
+  ChevronRightIcon,
+} from "@/components/shared/Icons";
 
 const LABEL: Record<ScreeningResult["status"], string> = {
   green: "Aman (Hijau)",
@@ -15,31 +22,27 @@ const LABEL: Record<ScreeningResult["status"], string> = {
 
 const STATUS_THEME: Record<
   ScreeningResult["status"],
-  { border: string; bg: string; text: string; markColor: string }
+  { border: string; bg: string; text: string }
 > = {
   green: {
     border: "border-status-ok-mark",
     bg: "bg-status-ok-bg",
     text: "text-status-ok-ink",
-    markColor: "#2F7A4D",
   },
   yellow: {
     border: "border-status-warn-mark",
     bg: "bg-status-warn-bg",
     text: "text-status-warn-ink",
-    markColor: "#E0A100",
   },
   red: {
     border: "border-status-alert-mark",
     bg: "bg-status-alert-bg",
     text: "text-status-alert-ink",
-    markColor: "#B3261E",
   },
   insufficient: {
     border: "border-line",
     bg: "bg-status-none-bg",
     text: "text-status-none-ink",
-    markColor: "#5A5E67",
   },
 };
 
@@ -69,13 +72,13 @@ export default function ResultView({
         className={`p-6 rounded-2xl border-2 ${theme.border} ${theme.bg} space-y-4 shadow-none`}
         aria-labelledby="hasil-judul"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3.5">
           <StatusMark status={result.status} size="lg" />
           <div>
-            <span className="text-sm font-bold uppercase tracking-wider block opacity-90">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider block opacity-90">
               Hasil Skrining Gejala
             </span>
-            <span className="text-xl font-bold font-serif">{LABEL[result.status]}</span>
+            <span className="text-xl sm:text-2xl font-bold font-serif">{LABEL[result.status]}</span>
           </div>
         </div>
 
@@ -83,17 +86,20 @@ export default function ResultView({
           <h1
             id="hasil-judul"
             tabIndex={-1}
-            className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight"
+            className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-ink leading-tight"
           >
             {result.headline}
           </h1>
-          <p className="text-lg text-ink leading-relaxed">{result.summary}</p>
+          <p className="text-base sm:text-lg text-ink leading-relaxed">{result.summary}</p>
         </div>
 
         {/* Banner Interupsi Tanda Bahaya (Frame 09e) */}
         {result.interrupted && (
-          <div className="p-3.5 bg-white/70 border border-status-alert-mark rounded-xl text-sm font-bold text-status-alert-ink leading-snug">
-            ⚠️ <strong>Pemeriksaan dihentikan seketika</strong> karena terdeteksi tanda bahaya. Pertanyaan yang tersisa tidak ditanyakan demi keselamatan.
+          <div className="p-3.5 bg-surface/90 border-2 border-status-alert-mark rounded-xl text-sm font-bold text-status-alert-ink leading-snug flex items-start gap-2.5">
+            <AlertTriangleIcon size={20} className="text-status-alert-mark shrink-0 mt-0.5" />
+            <span>
+              <strong>Pemeriksaan dihentikan seketika</strong> karena terdeteksi tanda bahaya. Pertanyaan yang tersisa tidak ditanyakan demi keselamatan.
+            </span>
           </div>
         )}
       </section>
@@ -108,10 +114,10 @@ export default function ResultView({
             {result.emergencyContacts.map((c) => (
               <a
                 key={c.number}
-                className="w-full min-h-[3.75rem] px-5 py-3 rounded-xl bg-status-alert-mark text-white font-bold text-xl flex items-center justify-center gap-3 hover:bg-[#8F1A13] transition-colors"
+                className="w-full min-h-[3.75rem] px-5 py-3 rounded-xl bg-status-alert-mark text-white font-bold text-xl flex items-center justify-center gap-3 hover:bg-status-alert-mark/90 active:bg-status-alert-mark/90 transition-colors focus-visible:ring-4 focus-visible:ring-focus"
                 href={`tel:${c.number}`}
               >
-                <span>📞</span>
+                <PhoneIcon size={22} />
                 <span>
                   {c.label}: {c.number}
                 </span>
@@ -162,10 +168,10 @@ export default function ResultView({
         <h2 className="font-serif text-xl font-bold text-ink">
           Langkah Tindak Lanjut
         </h2>
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {result.actions.map((a, idx) => (
             <li key={idx} className="flex items-start gap-2.5 text-base text-ink leading-normal">
-              <span className="text-primary font-bold">✓</span>
+              <CheckIcon size={18} className="text-primary font-bold shrink-0 mt-1" />
               <span>{a}</span>
             </li>
           ))}
@@ -184,7 +190,7 @@ export default function ResultView({
                 {a.question}
               </span>
               <div className="flex justify-between items-center gap-2">
-                <span className="text-lg font-bold text-ink">
+                <span className="text-base sm:text-lg font-bold text-ink">
                   {a.answerLabel}{" "}
                   <span className="text-xs text-ink-soft font-normal">
                     ({WHO[a.source]})
@@ -193,7 +199,7 @@ export default function ResultView({
                 <button
                   type="button"
                   onClick={() => onRevise(a.nodeId)}
-                  className="text-xs font-bold text-primary underline hover:text-primary-strong"
+                  className="min-h-[44px] min-w-[44px] px-2 text-xs font-bold text-primary underline hover:text-primary-strong flex items-center justify-center rounded focus-visible:ring-2 focus-visible:ring-focus"
                 >
                   Ubah
                 </button>
@@ -206,19 +212,21 @@ export default function ResultView({
       {/* Tombol Aksi Akhir */}
       <div className="space-y-3 pt-2">
         <Link
-          className="w-full min-h-[3.75rem] px-6 py-4 rounded-2xl bg-primary text-white font-bold text-xl flex items-center justify-center hover:bg-primary-strong transition-colors"
+          className="w-full min-h-[3.75rem] px-6 py-4 rounded-2xl bg-primary text-white font-bold text-xl flex items-center justify-center gap-2 hover:bg-primary-strong active:bg-primary-strong transition-all focus-visible:ring-4 focus-visible:ring-focus"
           href={homeHref}
         >
-          {homeLabel}
+          <span>{homeLabel}</span>
+          <ChevronRightIcon size={20} />
         </Link>
         <Button
           type="button"
           variant="outline"
           size="default"
           onClick={onRestart}
-          className="w-full text-base font-bold text-ink"
+          className="w-full text-base font-bold text-ink gap-2"
         >
-          Ulangi Pemeriksaan dari Awal
+          <RefreshIcon size={18} />
+          <span>Ulangi Pemeriksaan dari Awal</span>
         </Button>
       </div>
 

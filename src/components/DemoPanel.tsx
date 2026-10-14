@@ -5,6 +5,7 @@ import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { getOfflineQueueCount } from "@/lib/screening/persistence";
 import { Button } from "@/components/ui/button";
+import { SlidersIcon, CloseIcon } from "@/components/shared/Icons";
 
 export default function DemoPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,10 +29,10 @@ export default function DemoPanel() {
 
   const simulateScenario = (scenario: "green" | "yellow" | "red" | "insufficient") => {
     const labels = {
-      green: "🟢 Skenario Hijau (Stabil - Semua Normal)",
-      yellow: "🟡 Skenario Kuning (Perlu Pemantauan - Batuk > 3 Hari)",
-      red: "🔴 Skenario Merah (Tanda Bahaya - Nyeri Dada Interupsi)",
-      insufficient: "⚪ Skenario Data Tidak Cukup (Jawaban Ragu)",
+      green: "Skenario Hijau (Stabil - Semua Normal)",
+      yellow: "Skenario Kuning (Perlu Pemantauan - Batuk > 3 Hari)",
+      red: "Skenario Merah (Tanda Bahaya - Nyeri Dada Interupsi)",
+      insufficient: "Skenario Data Tidak Cukup (Jawaban Ragu)",
     };
 
     const simulatedRecord = {
@@ -104,10 +105,10 @@ export default function DemoPanel() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-2 text-ink shadow-md hover:bg-paper transition-all focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-2.5 text-ink shadow-md hover:bg-paper transition-all min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           title="Buka Panel Pintas Demo"
         >
-          <span className="text-sm" aria-hidden="true">🎛️</span>
+          <SlidersIcon className="h-4 w-4 text-primary" />
           <span className="font-bold text-xs">Pintas Demo</span>
           {offlineCount > 0 && (
             <span className="h-2 w-2 rounded-full bg-alert-mark" />
@@ -120,16 +121,16 @@ export default function DemoPanel() {
         <div className="w-80 rounded-2xl border-2 border-primary/30 bg-surface p-4 shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <div className="flex items-center gap-1.5">
-              <span className="text-base" aria-hidden="true">🎛️</span>
+              <SlidersIcon className="h-4 w-4 text-primary" />
               <strong className="text-sm font-bold text-ink">Pintas Demo 5 Menit</strong>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-ink-soft hover:text-ink font-bold text-base px-1"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-soft hover:bg-paper hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               aria-label="Tutup panel"
             >
-              &times;
+              <CloseIcon className="h-4 w-4" />
             </button>
           </div>
 
@@ -213,7 +214,8 @@ export default function DemoPanel() {
                 onClick={() => simulateScenario("green")}
                 className="text-[11px] h-8 justify-start text-ok-ink hover:bg-ok-bg/50 border-ok-mark/30"
               >
-                🟢 Normal (Hijau)
+                <span className="h-2 w-2 rounded-full bg-ok-mark shrink-0 mr-1.5" aria-hidden="true" />
+                Normal (Hijau)
               </Button>
               <Button
                 type="button"
@@ -222,7 +224,8 @@ export default function DemoPanel() {
                 onClick={() => simulateScenario("yellow")}
                 className="text-[11px] h-8 justify-start text-warn-ink hover:bg-warn-bg/50 border-warn-mark/30"
               >
-                🟡 Batuk (Kuning)
+                <span className="h-2 w-2 rounded-sm bg-warn-mark shrink-0 mr-1.5" aria-hidden="true" />
+                Batuk (Kuning)
               </Button>
               <Button
                 type="button"
@@ -231,7 +234,8 @@ export default function DemoPanel() {
                 onClick={() => simulateScenario("red")}
                 className="text-[11px] h-8 justify-start text-alert-ink hover:bg-alert-bg/50 border-alert-mark/30"
               >
-                🔴 Darurat (Merah)
+                <span className="h-2 w-2 rounded-full bg-alert-mark shrink-0 mr-1.5" aria-hidden="true" />
+                Darurat (Merah)
               </Button>
               <Button
                 type="button"
@@ -240,7 +244,8 @@ export default function DemoPanel() {
                 onClick={() => simulateScenario("insufficient")}
                 className="text-[11px] h-8 justify-start text-ink-soft hover:bg-paper border-line"
               >
-                ⚪ Ragu (Insuf.)
+                <span className="h-2 w-2 rounded-full border border-dashed border-ink-soft shrink-0 mr-1.5" aria-hidden="true" />
+                Ragu (Insuf.)
               </Button>
             </div>
           </div>

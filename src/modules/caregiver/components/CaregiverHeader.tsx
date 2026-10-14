@@ -7,7 +7,7 @@ export default function CaregiverHeader({ elder }: { elder: ElderProfile }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div
-            className="flex h-13 w-13 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-lg border border-primary/20"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-serif font-bold text-xl border-2 border-primary/20"
             aria-hidden="true"
           >
             {elder.name

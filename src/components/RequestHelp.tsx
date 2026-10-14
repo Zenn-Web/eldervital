@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { HandshakeIcon, ClockIcon, ChevronRightIcon } from "@/components/shared/Icons";
 
 /**
  * Mode "Minta caregiver" (Frame 07 & 07b).
@@ -19,9 +20,9 @@ export default function RequestHelp() {
         variant="outline"
         size="senior"
         onClick={() => setSent(true)}
-        className="w-full text-xl font-bold rounded-2xl flex items-center justify-center gap-3 border-2 border-line hover:border-primary active:border-primary"
+        className="w-full text-xl font-bold rounded-2xl flex items-center justify-center gap-3 border-2 border-line hover:border-primary active:border-primary bg-surface transition-all"
       >
-        <span>🤝</span>
+        <HandshakeIcon size={24} className="text-sogan" />
         <span>Minta Didampingi Caregiver</span>
       </Button>
     );
@@ -29,10 +30,10 @@ export default function RequestHelp() {
 
   // Frame 07b: Layar Tunggu Minta Caregiver
   return (
-    <Card className="p-6 border-2 border-sogan bg-[#FFFBF4] rounded-2xl space-y-4" role="status">
+    <Card className="p-6 border-2 border-sogan bg-surface rounded-2xl space-y-4 shadow-none" role="status">
       <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-full bg-sogan/15 text-sogan flex items-center justify-center text-2xl shrink-0">
-          ⏳
+        <div className="w-12 h-12 rounded-full bg-sogan/15 text-sogan flex items-center justify-center shrink-0 border border-sogan/30">
+          <ClockIcon size={24} />
         </div>
         <div className="space-y-1">
           <h3 className="font-serif text-2xl font-bold text-ink">
@@ -50,10 +51,11 @@ export default function RequestHelp() {
 
       <div className="flex flex-col gap-2.5 pt-2">
         <Link
-          className="w-full min-h-[3rem] px-5 py-3 rounded-xl bg-primary text-white font-bold text-center flex items-center justify-center text-lg hover:bg-primary-strong transition-colors"
+          className="w-full min-h-[3rem] px-5 py-3 rounded-xl bg-primary text-white font-bold text-center flex items-center justify-center gap-1.5 text-lg hover:bg-primary-strong transition-colors"
           href="/caregiver/periksa"
         >
-          Buka Tampilan Caregiver (Demo)
+          <span>Buka Tampilan Caregiver (Demo)</span>
+          <ChevronRightIcon size={18} />
         </Link>
         <Button
           type="button"

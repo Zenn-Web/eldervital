@@ -18,6 +18,7 @@ import FollowUpDialog from "@/modules/caregiver/components/FollowUpDialog";
 import FollowUpList from "@/modules/caregiver/components/FollowUpList";
 import StatusMark from "@/components/StatusMark";
 import { Button } from "@/components/ui/button";
+import { CloseIcon, ChevronRightIcon } from "@/components/shared/Icons";
 
 export default function CaregiverDashboard() {
   const [elder] = useState(MOCK_ELDER);
@@ -99,9 +100,10 @@ export default function CaregiverDashboard() {
           <button
             type="button"
             onClick={() => setSaveToast(null)}
-            className="text-white/80 hover:text-white font-bold ml-2"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors ml-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Tutup notifikasi"
           >
-            &times;
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -175,18 +177,18 @@ export default function CaregiverDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <Link
             href="/caregiver/periksa"
-            className="flex items-center justify-between p-3.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-bold text-sm"
+            className="flex items-center justify-between p-3.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-bold text-sm min-h-[44px]"
           >
             <span>Pemeriksaan Bersama Lansia (Demo)</span>
-            <span aria-hidden="true">&rarr;</span>
+            <ChevronRightIcon className="h-4 w-4 shrink-0" />
           </Link>
 
           <Link
             href="/caregiver/riwayat"
-            className="flex items-center justify-between p-3.5 rounded-lg border border-line bg-paper/50 hover:bg-paper transition-colors text-ink font-semibold text-sm"
+            className="flex items-center justify-between p-3.5 rounded-lg border border-line bg-paper/50 hover:bg-paper transition-colors text-ink font-semibold text-sm min-h-[44px]"
           >
             <span>Lihat Riwayat Pemeriksaan Lengkap</span>
-            <span aria-hidden="true">&rarr;</span>
+            <ChevronRightIcon className="h-4 w-4 shrink-0" />
           </Link>
         </div>
       </section>
@@ -227,9 +229,10 @@ export default function CaregiverDashboard() {
           <div className="pt-1">
             <Link
               href="/caregiver/riwayat"
-              className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 min-h-[44px]"
             >
-              Lihat seluruh daftar riwayat &rarr;
+              <span>Lihat seluruh daftar riwayat</span>
+              <ChevronRightIcon className="h-3.5 w-3.5" />
             </Link>
           </div>
         </section>

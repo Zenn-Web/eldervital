@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FollowUpAction, FollowUpType } from "../types";
 import { Button } from "@/components/ui/button";
+import { CloseIcon } from "@/components/shared/Icons";
 
 interface FollowUpDialogProps {
   isOpen: boolean;
@@ -90,10 +91,10 @@ export default function FollowUpDialog({
           <button
             type="button"
             onClick={onClose}
-            className="text-ink-soft hover:text-ink text-xl font-bold p-1 rounded-md"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-soft hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus transition-colors"
             aria-label="Tutup dialog"
           >
-            &times;
+            <CloseIcon className="h-5 w-5" />
           </button>
         </div>
 

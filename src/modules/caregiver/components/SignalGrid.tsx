@@ -29,7 +29,7 @@ function MiniStatusMark({ status, title }: { status: ResultStatus; title: string
       return (
         <span
           title={title}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-ok-bg border border-ok-mark/40 text-ok-mark"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-ok-bg border-2 border-ok-mark text-ok-mark shrink-0"
           aria-label={title}
         >
           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -41,7 +41,7 @@ function MiniStatusMark({ status, title }: { status: ResultStatus; title: string
       return (
         <span
           title={title}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-warn-bg border border-warn-mark/40 text-warn-mark"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-warn-bg border-2 border-warn-mark text-warn-mark shrink-0"
           aria-label={title}
         >
           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -53,7 +53,7 @@ function MiniStatusMark({ status, title }: { status: ResultStatus; title: string
       return (
         <span
           title={title}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-alert-bg border border-alert-mark/40 text-alert-mark"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-alert-bg border-2 border-alert-mark text-alert-mark shrink-0"
           aria-label={title}
         >
           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -65,7 +65,7 @@ function MiniStatusMark({ status, title }: { status: ResultStatus; title: string
       return (
         <span
           title={title}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-ink-soft/40 text-ink-soft"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-dashed border-ink-soft/40 text-ink-soft shrink-0"
           aria-label={title}
         >
           <span className="h-2 w-2 rounded-full bg-ink-soft/40" />
@@ -152,16 +152,15 @@ export default function SignalGrid({ days }: SignalGridProps) {
                   return (
                     <td
                       key={day.date}
-                      onClick={() => setSelectedDate(day.date)}
                       className={cn(
-                        "py-2.5 px-1 text-center cursor-pointer transition-colors",
+                        "py-1 px-1 text-center transition-colors",
                         isSelected ? "bg-primary/5" : ""
                       )}
                     >
                       <button
                         type="button"
                         onClick={() => setSelectedDate(day.date)}
-                        className="inline-flex items-center justify-center p-1 rounded hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] p-1 rounded-lg hover:bg-paper/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                         aria-label={label}
                       >
                         <MiniStatusMark status={status} title={label} />

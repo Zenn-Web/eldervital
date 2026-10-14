@@ -32,6 +32,14 @@ import {
 } from "@/lib/voice/speech";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  VolumeIcon,
+  TurtleIcon,
+  MicIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+} from "@/components/shared/Icons";
 import ResultView from "./ResultView";
 
 type Pending =
@@ -294,7 +302,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
 
       {/* State Konfirmasi Suara (Frame 08b) */}
       {pending ? (
-        <Card className="p-6 border-2 border-primary bg-[#F9F5EC] rounded-2xl space-y-4" role="alert">
+        <Card className="p-6 border-2 border-primary bg-surface rounded-2xl space-y-4 shadow-none" role="alert">
           {pending.kind === "confirm" ? (
             <>
               <div className="space-y-1">
@@ -312,9 +320,10 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
                   type="button"
                   size="senior"
                   onClick={() => choose(pending.optionId)}
-                  className="w-full text-xl font-bold rounded-xl"
+                  className="w-full text-xl font-bold rounded-xl flex items-center justify-center gap-2"
                 >
-                  ✓ Benar, Lanjutkan
+                  <CheckIcon size={20} />
+                  <span>Benar, Lanjutkan</span>
                 </Button>
                 <Button
                   type="button"
@@ -352,11 +361,11 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               key={o.id}
               type="button"
               onClick={() => choose(o.id)}
-              className="w-full min-h-[3.75rem] px-6 py-4 rounded-2xl border-2 border-line bg-surface text-ink text-left font-bold text-xl hover:border-primary active:border-primary hover:bg-[#F9F5EC] active:bg-[#F9F5EC] transition-all flex items-center justify-between group shadow-none focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none"
+              className="w-full min-h-[3.75rem] px-6 py-4 rounded-2xl border-2 border-line bg-surface text-ink text-left font-bold text-xl hover:border-primary active:border-primary hover:bg-paper active:bg-paper transition-all flex items-center justify-between group shadow-none focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer"
             >
               <span>{o.label}</span>
-              <span className="w-8 h-8 rounded-full border border-line flex items-center justify-center text-ink-soft group-hover:border-primary group-hover:text-primary transition-colors text-base">
-                ➔
+              <span className="w-8 h-8 rounded-full border border-line flex items-center justify-center text-ink-soft group-hover:border-primary group-hover:text-primary transition-colors text-base shrink-0">
+                <ChevronRightIcon size={20} />
               </span>
             </button>
           ))}
@@ -420,9 +429,10 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
           variant="outline"
           size="sm"
           onClick={repeat}
-          className="font-bold text-sm h-11"
+          className="font-bold text-sm h-11 gap-2"
         >
-          🔊 Ulangi
+          <VolumeIcon size={18} />
+          <span>Ulangi Suara</span>
         </Button>
 
         {tts && (
@@ -432,9 +442,10 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             size="sm"
             aria-pressed={slow}
             onClick={() => setSlow(!slow)}
-            className={`font-bold text-sm h-11 ${slow ? "border-primary bg-primary/10 text-primary" : ""}`}
+            className={`font-bold text-sm h-11 gap-2 ${slow ? "border-primary bg-primary/10 text-primary" : ""}`}
           >
-            🐢 Lebih Pelan: {slow ? "Ya" : "Tidak"}
+            <TurtleIcon size={18} />
+            <span>Lebih Pelan: {slow ? "Ya" : "Tidak"}</span>
           </Button>
         )}
 
@@ -447,7 +458,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             disabled={listening}
             className="col-span-2 font-bold text-base h-12 flex items-center justify-center gap-2"
           >
-            <span>🎙️</span>
+            <MicIcon size={20} />
             <span>{listening ? "Mendengarkan ucapan..." : "Jawab dengan Suara"}</span>
           </Button>
         )}
@@ -463,9 +474,10 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               setNotice(null);
               setSession(undoLast(tree, session));
             }}
-            className="col-span-2 font-bold text-sm text-ink-soft hover:text-ink h-10"
+            className="col-span-2 font-bold text-sm text-ink-soft hover:text-ink h-11 gap-1.5"
           >
-            ↩️ Ubah Jawaban Sebelumnya
+            <ChevronLeftIcon size={18} />
+            <span>Ubah Jawaban Sebelumnya</span>
           </Button>
         )}
       </div>

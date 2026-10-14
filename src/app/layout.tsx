@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bitter } from "next/font/google";
 import localFont from "next/font/local";
 import RegisterSW from "@/components/RegisterSW";
+import DemoPanel from "@/components/DemoPanel";
 import "./globals.css";
 
 // Atkinson Hyperlegible Next (SIL OFL), disajikan dari server sendiri agar tetap
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         {children}
         <RegisterSW />
+        <DemoPanel />
       </body>
     </html>
   );

@@ -6,17 +6,19 @@
  * anon/authenticated. Migrasi yang diuji adalah file yang sama dengan yang
  * ditempel ke Supabase.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { newExamId, toSaveArgs, type SaveExaminationArgs } from "@/lib/exam/payload";
 import { answerChoice, evaluate, startSession, treeV1 } from "@/lib/screening";
 
-const migration = readFileSync(
-  fileURLToPath(new URL("../migrations/0001_init.sql", import.meta.url)),
-  "utf8",
-);
+// Semua migrasi, urut nama berkas: sama dengan urutan menempelkannya di Supabase.
+const migrationsDir = fileURLToPath(new URL("../migrations/", import.meta.url));
+const migrations = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => readFileSync(migrationsDir + f, "utf8"));
 
 const ids = {
   elderA: "00000000-0000-0000-0000-0000000000a1",
@@ -61,7 +63,7 @@ beforeAll(async () => {
   for (const id of Object.values(ids)) {
     await db.query("insert into auth.users (id) values ($1)", [id]);
   }
-  await db.exec(migration);
+  for (const sql of migrations) await db.exec(sql);
 
   await as(ids.careX);
   await db.query("insert into public.caregivers (id, display_name) values ($1, 'Sinta')", [ids.careX]);
@@ -580,5 +582,60 @@ describe("alur permintaan bantuan (sesuai src/lib/help.ts)", () => {
       [req],
     );
     expect(done).toHaveLength(1);
+  });
+});
+
+describe("transisi status permintaan bantuan (migrasi 0002)", () => {
+  // Tanpa trigger 0002, semua perintah di bawah lolos RLS karena RLS hanya memeriksa nilai baru.
+  let req: string;
+
+  async function newRequest() {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    return (await rows("insert into public.help_requests (elder_id) values ($1) returning id", [elder]))[0].id as string;
+  }
+
+  it("caregiver lain tidak bisa mengambil alih permintaan yang sudah ditanggapi", async () => {
+    req = await newRequest();
+    await as(ids.careY);
+    await db.query("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+    await as(ids.careX);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careX]);
+    await fails("update public.help_requests set status = 'done', taken_by = $2 where id = $1", [req, ids.careX]);
+  });
+
+  it("hanya caregiver yang menanggapi yang bisa menandai selesai", async () => {
+    await as(ids.careY);
+    await db.query("update public.help_requests set status = 'done', handled_at = now() where id = $1", [req]);
+    await db.exec("reset role");
+    expect((await rows("select status from public.help_requests where id = $1", [req]))[0].status).toBe("done");
+  });
+
+  it("permintaan yang selesai tidak bisa dibuka lagi oleh lansia maupun caregiver", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set status = 'open' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+  });
+
+  it("permintaan yang dibatalkan tidak bisa dihidupkan lagi oleh caregiver", async () => {
+    req = await newRequest();
+    await db.query("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+  });
+
+  it("tidak bisa melompat dari open langsung ke done, atau memindahkan ke lansia lain", async () => {
+    req = await newRequest();
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'done', taken_by = $2 where id = $1", [req, ids.careY]);
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set elder_id = gen_random_uuid() where id = $1", [req]);
+  });
+
+  it("fungsi trigger tidak bisa dipanggil langsung", async () => {
+    await as(ids.careY);
+    await fails("select public.check_help_request_transition()");
   });
 });

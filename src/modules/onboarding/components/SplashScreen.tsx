@@ -16,6 +16,7 @@ export function SplashScreen({ onStart }: SplashScreenProps) {
             height="56"
             viewBox="0 0 40 40"
             fill="none"
+            aria-hidden="true"
             className="text-white"
           >
             {/* Elegant pulse & heart blossom */}

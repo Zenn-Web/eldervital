@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QrCodeSvg } from "@/components/shared/QrCodeSvg";
+import { ChevronLeftIcon, CameraIcon } from "@/components/shared/Icons";
 
 interface CaregiverPairingProps {
   onPaired: (elder: { name: string; ageRange: string; shareResults: boolean }) => void;
@@ -45,21 +46,10 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
           <button
             type="button"
             onClick={() => setStep("scan")}
-            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink"
+            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
             aria-label="Kembali ke pemindai"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
+            <ChevronLeftIcon size={24} />
           </button>
 
           <div className="space-y-2">
@@ -87,7 +77,7 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
           </Card>
 
           {/* Izin Berbagi Data */}
-          <div className="p-4 rounded-xl border border-line bg-[#FFFBF4] space-y-3">
+          <div className="p-4 rounded-xl border border-line bg-surface space-y-3">
             <label className="flex items-start gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -125,21 +115,10 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
         <button
           type="button"
           onClick={onBack}
-          className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink"
-          aria-label="Kembali"
+          className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+          aria-label="Kembali ke formulir akun"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
+          <ChevronLeftIcon size={24} />
         </button>
 
         <div className="space-y-2">
@@ -152,7 +131,7 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
         </div>
 
         {/* Viewfinder Kamera Scanner Simulasi */}
-        <div className="w-full aspect-square max-w-[280px] mx-auto bg-[#1D2433] rounded-3xl p-6 relative flex flex-col items-center justify-center gap-4 shadow-md">
+        <div className="w-full aspect-square max-w-[280px] mx-auto bg-ink rounded-3xl p-6 relative flex flex-col items-center justify-center gap-4 shadow-md">
           {/* 4 Sudut Viewfinder */}
           <div className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-paper rounded-tl-xl" />
           <div className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-paper rounded-tr-xl" />
@@ -168,9 +147,10 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
             type="button"
             onClick={handleSimulateScan}
             size="sm"
-            className="text-xs bg-paper text-ink hover:bg-white border-0 font-bold"
+            className="text-xs bg-paper text-ink hover:bg-white border-0 font-bold gap-1.5"
           >
-            📷 Simulasikan Pindai
+            <CameraIcon size={16} />
+            <span>Simulasikan Pindai</span>
           </Button>
         </div>
 

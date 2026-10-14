@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ChevronLeftIcon } from "@/components/shared/Icons";
 
 interface ElderProfileFormProps {
   onSaved: (data: { displayName: string; ageRange: string }) => void;
@@ -25,96 +26,95 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
 
   return (
     <div className="flex flex-col min-h-screen justify-between p-6 max-w-md mx-auto text-ink">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <button
-          type="button"
-          onClick={onBack}
-          className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink"
-          aria-label="Kembali"
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-6">
+        <div className="space-y-6">
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+            aria-label="Kembali ke pemilihan peran"
           >
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </button>
+            <ChevronLeftIcon size={24} />
+          </button>
 
-        <div className="space-y-2">
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight">
-            Profil Anda
-          </h1>
-          <p className="text-lg text-ink-soft">
-            Tidak perlu kata sandi. Cukup nama panggilan dan rentang usia agar sapaan lebih nyaman.
-          </p>
-        </div>
+          <div className="space-y-2">
+            <h1 className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight">
+              Profil Anda
+            </h1>
+            <p className="text-lg text-ink-soft">
+              Tidak perlu kata sandi. Cukup nama panggilan dan rentang usia agar sapaan lebih nyaman.
+            </p>
+          </div>
 
-        {/* Input Nama Panggilan */}
-        <div className="space-y-2">
-          <label htmlFor="elder-name" className="block text-xl font-bold text-ink">
-            Nama panggilan
-          </label>
-          <input
-            id="elder-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="contoh: Bu Sari atau Pak Budi"
-            required
-            className="w-full min-h-[3.75rem] px-4 py-3 text-xl rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans"
-          />
-        </div>
+          {/* Input Nama Panggilan */}
+          <div className="space-y-2">
+            <label htmlFor="elder-name" className="block text-xl font-bold text-ink">
+              Nama panggilan
+            </label>
+            <input
+              id="elder-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="contoh: Bu Sari atau Pak Budi"
+              required
+              autoComplete="name"
+              className="w-full min-h-[3.75rem] px-4 py-3 text-xl rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans"
+            />
+          </div>
 
-        {/* Pilihan Usia */}
-        <div className="space-y-3 pt-2">
-          <span className="block text-xl font-bold text-ink">
-            Rentang usia
-          </span>
-          <div className="grid grid-cols-1 gap-2.5">
-            {AGE_RANGES.map((r) => {
-              const selected = ageRange === r.id;
-              return (
-                <button
-                  type="button"
-                  key={r.id}
-                  onClick={() => setAgeRange(r.id)}
-                  className={`w-full min-h-[3.25rem] px-5 py-3 rounded-xl border-2 text-left font-bold text-lg flex items-center justify-between transition-colors ${
-                    selected
-                      ? "border-primary bg-primary text-white"
-                      : "border-line bg-surface text-ink hover:border-ink hover:bg-paper"
-                  }`}
-                >
-                  <span>{r.label}</span>
-                  <span
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      selected ? "border-white bg-white text-primary" : "border-line"
+          {/* Pilihan Usia Semantik (Fieldset + Radiogroup) */}
+          <fieldset className="space-y-3 pt-2">
+            <legend className="text-xl font-bold text-ink">
+              Rentang usia
+            </legend>
+            <div
+              role="radiogroup"
+              aria-label="Pilihan rentang usia lansia"
+              className="grid grid-cols-1 gap-2.5"
+            >
+              {AGE_RANGES.map((r) => {
+                const selected = ageRange === r.id;
+                return (
+                  <button
+                    type="button"
+                    key={r.id}
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setAgeRange(r.id)}
+                    className={`w-full min-h-[3.75rem] px-5 py-3 rounded-xl border-2 text-left font-bold text-lg flex items-center justify-between transition-colors focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer ${
+                      selected
+                        ? "border-primary bg-primary text-white"
+                        : "border-line bg-surface text-ink hover:border-ink hover:bg-paper"
                     }`}
                   >
-                    {selected && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                    <span>{r.label}</span>
+                    <span
+                      aria-hidden="true"
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        selected ? "border-white bg-white text-primary" : "border-line"
+                      }`}
+                    >
+                      {selected && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        </div>
+
+        {/* Tombol Simpan di dalam <form> */}
+        <div className="space-y-3 pt-6 pb-2">
+          <Button
+            type="submit"
+            size="senior"
+            className="w-full text-xl font-bold rounded-2xl"
+          >
+            Lanjut: Hubungkan Keluarga
+          </Button>
         </div>
       </form>
-
-      <div className="pt-6 pb-2">
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          size="senior"
-          className="w-full text-xl font-bold rounded-2xl"
-        >
-          Lanjut ke Kode QR
-        </Button>
-      </div>
     </div>
   );
 }

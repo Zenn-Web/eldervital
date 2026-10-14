@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ChevronLeftIcon } from "@/components/shared/Icons";
 
 interface ScheduleSetupProps {
   onFinish: (schedules: typeof DEFAULT_ITEMS) => void;
@@ -31,21 +32,10 @@ export function ScheduleSetup({ onFinish, onBack }: ScheduleSetupProps) {
           <button
             type="button"
             onClick={onBack}
-            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink"
-            aria-label="Kembali"
+            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+            aria-label="Kembali ke layar QR"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M15 5l-7 7 7 7" />
-            </svg>
+            <ChevronLeftIcon size={24} />
           </button>
         )}
 
@@ -74,15 +64,21 @@ export function ScheduleSetup({ onFinish, onBack }: ScheduleSetupProps) {
                 </span>
               </div>
 
+              {/* Accessible Toggle Switch (role="switch") */}
               <button
                 type="button"
+                role="switch"
+                aria-checked={item.enabled}
+                aria-label={`Pengingat ${item.label} pukul ${item.time}`}
                 onClick={() => toggleItem(item.id)}
-                className={`w-16 h-10 rounded-full p-1 transition-colors flex items-center ${
+                className={`w-16 h-10 min-h-[44px] rounded-full p-1 transition-colors flex items-center focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer ${
                   item.enabled ? "bg-primary justify-end" : "bg-line/60 justify-start"
                 }`}
-                aria-label={`Toggle pengingat ${item.label}`}
               >
-                <span className="w-8 h-8 rounded-full bg-white shadow-sm block" />
+                <span
+                  aria-hidden="true"
+                  className="w-8 h-8 rounded-full bg-white shadow-sm block"
+                />
               </button>
             </div>
           ))}
@@ -99,7 +95,7 @@ export function ScheduleSetup({ onFinish, onBack }: ScheduleSetupProps) {
           size="senior"
           className="w-full text-xl font-bold rounded-2xl"
         >
-          Selesai & Buka Beranda
+          Selesai & Mulai Pakai
         </Button>
       </div>
     </div>

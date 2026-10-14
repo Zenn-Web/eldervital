@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QrCodeSvg } from "@/components/shared/QrCodeSvg";
+import { ChevronLeftIcon, RefreshIcon } from "@/components/shared/Icons";
 
 interface ElderQrDisplayProps {
   displayName: string;
@@ -42,21 +43,10 @@ export function ElderQrDisplay({
         <button
           type="button"
           onClick={onBack}
-          className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink"
-          aria-label="Kembali"
+          className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+          aria-label="Kembali ke profil"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
+          <ChevronLeftIcon size={24} />
         </button>
 
         <div className="space-y-2">
@@ -86,8 +76,15 @@ export function ElderQrDisplay({
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2.5 rounded-full bg-[#ECE4D4] overflow-hidden">
+            {/* Accessible Progress Bar */}
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progressPct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Masa berlaku kode QR"
+              className="w-full h-2.5 rounded-full bg-line/40 overflow-hidden"
+            >
               <div
                 className="h-full rounded-full bg-sogan transition-all duration-1000"
                 style={{ width: `${progressPct}%` }}
@@ -103,19 +100,19 @@ export function ElderQrDisplay({
           </div>
         </Card>
 
-        <p className="text-base text-ink-soft leading-relaxed">
-          Kode ini adalah token aman sekali pakai. Tidak berisi data riwayat kesehatan Anda.
-        </p>
-
-        {secondsLeft === 0 && (
+        {/* Tombol Perbarui Token bila habis */}
+        <div className="text-center">
           <Button
-            onClick={handleRefreshToken}
+            type="button"
             variant="outline"
-            className="w-full text-base font-bold"
+            size="sm"
+            onClick={handleRefreshToken}
+            className="text-sm font-bold text-ink-soft hover:text-ink gap-2"
           >
-            🔄 Buat Kode QR Baru
+            <RefreshIcon size={16} />
+            <span>Buat Kode QR Baru</span>
           </Button>
-        )}
+        </div>
       </div>
 
       <div className="space-y-3 pt-6 pb-2">
@@ -124,7 +121,7 @@ export function ElderQrDisplay({
           size="senior"
           className="w-full text-xl font-bold rounded-2xl"
         >
-          Lanjut ke Pengingat
+          Keluarga Sudah Memindai
         </Button>
       </div>
     </div>

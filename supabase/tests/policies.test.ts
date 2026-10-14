@@ -496,3 +496,32 @@ describe("payload penyimpanan dari klien", () => {
     expect(x).toEqual({ mode: "caregiver", caregiver_id: ids.careY, status: "selesai", result_status: "green" });
   });
 });
+
+describe("riwayat yang dibaca caregiver (dashboard)", () => {
+  // Melanjutkan keadaan tes sebelumnya: elderB terhubung aktif dengan careY tanpa izin
+  // berbagi hasil; elderB punya pemeriksaan mandiri, careY mencatat satu mode caregiver.
+  it("tanpa izin berbagi: hanya pemeriksaan yang ia catat sendiri, tanpa Cek Mandiri lansia", async () => {
+    await as(ids.careY);
+    const exams = await rows("select mode from public.examinations order by mode");
+    expect(exams).toEqual([{ mode: "caregiver" }]);
+    // Jawaban dari catatannya sendiri terlihat; jawaban Cek Mandiri lansia tidak.
+    const answerSources = await rows("select distinct source from public.exam_answers");
+    expect(answerSources).toEqual([{ source: "caregiver" }]);
+  });
+
+  it("setelah lansia mengizinkan: Cek Mandiri beserta jawabannya ikut terlihat", async () => {
+    await db.exec("reset role");
+    const elder = await elderIdOf(ids.elderB);
+    const [link] = await rows("select id from public.care_links where elder_id = $1 and caregiver_id = $2", [
+      elder,
+      ids.careY,
+    ]);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("select public.set_share_results($1, true)", [link.id]);
+    await as(ids.careY);
+    const modes = await rows("select mode from public.examinations order by mode");
+    expect(modes).toEqual([{ mode: "caregiver" }, { mode: "mandiri" }]);
+    const n = (await rows("select count(*)::int c from public.exam_answers where source = 'lansia'"))[0].c;
+    expect(n).toBeGreaterThan(0);
+  });
+});

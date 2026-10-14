@@ -687,3 +687,43 @@ describe("jadwal pengingat", () => {
     expect(await rows("select * from public.reminder_schedules")).toEqual([]);
   });
 });
+
+describe("pengaturan profil dan keluar dari profil lansia", () => {
+  it("lansia mengubah nama dan usianya; caregiver tidak bisa mengubah profil lansia", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("update public.elders set display_name = 'Pak Bono S.', age_range = '60-65' where id = $1", [elder]);
+    await as(ids.careY); // terhubung aktif, tetap tidak boleh mengubah
+    expect(await rows("update public.elders set display_name = 'diubah' returning id")).toEqual([]);
+    await db.exec("reset role");
+    expect((await rows("select display_name, age_range from public.elders where id = $1", [elder]))[0]).toEqual({
+      display_name: "Pak Bono S.",
+      age_range: "60-65",
+    });
+  });
+
+  it("lansia tidak bisa memindahkan profilnya ke sesi lain", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.elders set device_user_id = $1", [ids.careX]);
+  });
+
+  it("caregiver hanya bisa mengubah namanya sendiri", async () => {
+    await as(ids.careY);
+    expect(await rows("update public.caregivers set display_name = 'Budi S.' returning id")).toEqual([{ id: ids.careY }]);
+    expect(await rows("update public.caregivers set display_name = 'x' where id = $1 returning id", [ids.careX])).toEqual([]);
+  });
+
+  it("keluar dari profil menghapus seluruh data lansia, termasuk bantuan, jadwal, dan token", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("select public.create_pairing_token()");
+    await db.query("delete from public.elders where id = $1", [elder]);
+    await db.exec("reset role");
+    for (const t of ["examinations", "care_links", "help_requests", "reminder_schedules", "pairing_tokens"]) {
+      const n = (await rows(`select count(*)::int c from public.${t} where elder_id = $1`, [elder]))[0].c;
+      expect(n, t).toBe(0);
+    }
+    // Akun caregiver tidak ikut terhapus.
+    expect((await rows("select count(*)::int c from public.caregivers where id = $1", [ids.careY]))[0].c).toBe(1);
+  });
+});

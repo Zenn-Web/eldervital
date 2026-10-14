@@ -61,3 +61,21 @@ export async function ensureCaregiverProfile(user: User): Promise<CaregiverProfi
   if (insertError && insertError.code !== "23505") throw insertError;
   return { id: user.id, displayName };
 }
+
+/** Mengubah nama caregiver (yang tampil di perangkat lansia). RLS: hanya akun sendiri. */
+export async function updateCaregiverName(displayName: string): Promise<CaregiverProfile> {
+  const name = displayName.trim();
+  if (name.length < 1 || name.length > 60) throw new Error("nama harus 1 sampai 60 karakter");
+  const supabase = db();
+  const { data: session } = await supabase.auth.getSession();
+  const id = session.session?.user.id;
+  if (!id) throw new Error("harus masuk terlebih dahulu");
+  const { data, error } = await supabase
+    .from("caregivers")
+    .update({ display_name: name })
+    .eq("id", id)
+    .select("id, display_name")
+    .single();
+  if (error) throw error;
+  return { id: data.id, displayName: data.display_name };
+}

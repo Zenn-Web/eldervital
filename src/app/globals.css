@@ -1,0 +1,448 @@
+/*
+ * Sistem tampilan ElderVital.
+ *
+ * Alasan desain (singkat):
+ * - Huruf: Atkinson Hyperlegible Next. Dirancang oleh Braille Institute agar setiap
+ *   huruf mudah dibedakan oleh pembaca dengan penglihatan lemah (mis. I besar, l kecil, 1).
+ *   Satu keluarga huruf saja, tanpa pasangan dekoratif, supaya tampilan tenang.
+ * - Warna: latar kertas hangat (bukan putih polos) agar tidak silau, tinta hijau
+ *   kehitaman untuk teks, satu warna aksi (hijau tua). Semua pasangan teks dan latar
+ *   diukur minimal 7:1 (WCAG AAA); tanda grafis minimal 3:1.
+ * - Status hijau, kuning, merah selalu disertai bentuk dan kata, tidak hanya warna,
+ *   supaya terbaca oleh pengguna buta warna.
+ * - Tombol minimal 60px dan tanpa transisi: respons langsung lebih mudah dipahami.
+ * - Tanpa bayangan, gradien, kaca buram, atau animasi. Pemisah memakai garis tinta tegas.
+ * - Jarak hanya memakai skala --s1 sampai --s7 supaya ritme konsisten.
+ */
+
+:root {
+  --paper: #f4efe6;
+  --surface: #fbf8f2;
+  --ink: #17231f;
+  --ink-soft: #44524d;
+  --line: #7a857f;
+
+  --primary: #0e5a4c;
+  --primary-strong: #0a4a3e;
+  --on-primary: #ffffff;
+  --focus: #9a4400;
+
+  --ok-bg: #dcebdd;
+  --ok-ink: #134b24;
+  --ok-mark: #1f7a3a;
+  --warn-bg: #f6e4a0;
+  --warn-ink: #4a3500;
+  --warn-mark: #8a6500;
+  --alert-bg: #f3d2cd;
+  --alert-ink: #7a1212;
+  --alert-mark: #a31d1d;
+  --none-bg: #e4e1d8;
+  --none-ink: #2e3a36;
+
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+
+  --radius: 0.5rem;
+  --tap: 3.75rem;
+  --nav: 4.25rem;
+  --measure: 40rem;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.55;
+}
+
+/* Antarmuka lansia: huruf lebih besar. */
+.elder {
+  font-size: 1.375rem;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--s4);
+  line-height: 1.2;
+  font-weight: 700;
+}
+h1 {
+  font-size: clamp(1.75rem, 6vw, 2.25rem);
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.25rem;
+}
+p {
+  margin: 0 0 var(--s4);
+  max-width: 36em;
+}
+ul,
+ol {
+  margin: 0 0 var(--s4);
+  padding-left: 1.25em;
+}
+li + li {
+  margin-top: var(--s2);
+}
+a {
+  color: var(--primary);
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 3px;
+}
+h1:focus {
+  outline: none;
+}
+
+.skip {
+  position: absolute;
+  left: var(--s4);
+  top: -6rem;
+  z-index: 10;
+  padding: var(--s3) var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+}
+.skip:focus {
+  top: var(--s4);
+}
+
+/* Tata letak */
+
+.page {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding: var(--s5) var(--s4) calc(var(--nav) + var(--s7));
+}
+.stack > * + * {
+  margin-top: var(--s4);
+}
+.stack-lg > * + * {
+  margin-top: var(--s6);
+}
+.meta {
+  margin: 0 0 var(--s4);
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+.hint {
+  color: var(--ink-soft);
+}
+.small {
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+/* Penanda data simulasi (wajib berlabel saat demo) */
+
+.sim {
+  margin: 0;
+  padding: var(--s2) var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  max-width: none;
+}
+
+/* Tombol */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--s3) var(--s5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #ebe4d6;
+}
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.btn-primary:hover {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+}
+.btn-choice {
+  justify-content: flex-start;
+  text-align: left;
+}
+.btn-quiet {
+  width: auto;
+  min-height: 3rem;
+  padding: var(--s2) var(--s4);
+  border-color: transparent;
+  background: transparent;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.btn-quiet:hover {
+  background: #ebe4d6;
+}
+.btn[aria-pressed="true"] {
+  border-width: 4px;
+  border-color: var(--primary);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  border-style: dashed;
+  border-color: var(--line);
+  background: var(--none-bg);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+.btn-tool {
+  width: auto;
+  min-height: 3rem;
+  padding: var(--s2) var(--s4);
+  font-size: 1rem;
+}
+.qa .btn-quiet {
+  padding-left: 0;
+  min-height: 2.75rem;
+}
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  margin-top: var(--s5);
+}
+.tools + .small {
+  margin-top: var(--s4);
+}
+
+/* Panel */
+
+.panel {
+  padding: var(--s5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.panel > :last-child {
+  margin-bottom: 0;
+}
+.panel h2 {
+  font-size: 1.25rem;
+}
+
+/* Pilihan peran: dua baris besar */
+
+.choice-link {
+  display: block;
+  padding: var(--s5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+.choice-link:hover {
+  background: #ebe4d6;
+}
+.choice-link strong {
+  display: block;
+  font-size: 1.375rem;
+  margin-bottom: var(--s1);
+}
+.choice-link span {
+  color: var(--ink-soft);
+}
+
+/* Status hasil */
+
+.status {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s4);
+  align-items: start;
+  padding: var(--s5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+}
+.status > div > :last-child {
+  margin-bottom: 0;
+}
+.status-label {
+  margin: 0 0 var(--s1);
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: none;
+}
+.status h1 {
+  margin-bottom: var(--s3);
+}
+.status-green {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+.status-yellow {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+.status-red {
+  background: var(--alert-bg);
+  color: var(--alert-ink);
+}
+.status-insufficient {
+  background: var(--none-bg);
+  color: var(--none-ink);
+  border-style: dashed;
+}
+.mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: none;
+}
+
+/* Daftar jawaban */
+
+.qa {
+  margin: 0;
+}
+.qa > div {
+  padding: var(--s4) 0;
+  border-top: 2px solid var(--line);
+}
+.qa > div:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.qa dt {
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+.qa dd {
+  margin: var(--s1) 0 0;
+  font-weight: 700;
+}
+.qa .who {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.emergency {
+  display: grid;
+  gap: var(--s3);
+}
+
+/* Formulir */
+
+.field label {
+  display: block;
+  margin-bottom: var(--s2);
+  font-weight: 700;
+}
+.field input[type="text"] {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--s3) var(--s4);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.check {
+  display: flex;
+  gap: var(--s3);
+  align-items: flex-start;
+}
+.check input {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0.15rem;
+  accent-color: var(--primary);
+}
+
+/* Navigasi bawah */
+
+.bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 5;
+  display: flex;
+  background: var(--surface);
+  border-top: 2px solid var(--ink);
+}
+.bottom-nav a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--nav);
+  padding: var(--s2);
+  border-top: 6px solid transparent;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+.bottom-nav a + a {
+  border-left: 2px solid var(--line);
+}
+.bottom-nav a[aria-current="page"] {
+  border-top-color: var(--primary);
+  background: var(--paper);
+}
+.bottom-nav a:hover {
+  background: #ebe4d6;
+}
+.elder + .bottom-nav a,
+.elder .bottom-nav a {
+  font-size: 1.25rem;
+}
+
+@media (min-width: 48rem) {
+  .page {
+    padding-top: var(--s6);
+  }
+}

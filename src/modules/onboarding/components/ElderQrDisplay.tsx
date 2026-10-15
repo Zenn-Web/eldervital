@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { QrCodeSvg } from "@/components/shared/QrCodeSvg";
 import { TOKEN_TTL_MINUTES } from "@/lib/pairing";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { ElderPairingLive } from "./ElderPairingLive";
 
 interface ElderQrDisplayProps {
   displayName: string;
@@ -8,7 +10,16 @@ interface ElderQrDisplayProps {
   onBack: () => void;
 }
 
-export function ElderQrDisplay({
+/** Dengan database: pairing sungguhan. Tanpa database: tampilan contoh berlabel simulasi. */
+export function ElderQrDisplay(props: ElderQrDisplayProps) {
+  return isSupabaseConfigured() ? (
+    <ElderPairingLive displayName={props.displayName} onNext={props.onNext} />
+  ) : (
+    <ElderQrDemo {...props} />
+  );
+}
+
+function ElderQrDemo({
   displayName,
   onNext,
   // onBack kept in interface for API compatibility; not used in this screen

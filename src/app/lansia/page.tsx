@@ -3,9 +3,9 @@ import Link from "next/link";
 import ReminderDemo from "@/components/ReminderDemo";
 import RequestHelp from "@/components/RequestHelp";
 import ElderName from "@/components/session/ElderName";
+import ElderLinksCard from "@/components/session/ElderLinksCard";
 import { DEFAULT_REMINDERS } from "@/lib/schedule";
 import {
-  UserIcon,
   ClockIcon,
   ChevronRightIcon,
 } from "@/components/shared/Icons";
@@ -55,30 +55,7 @@ export default function ElderHome() {
       </section>
 
       {/* Kartu Status Keluarga Terhubung */}
-      <div className="p-4 rounded-2xl bg-surface border border-line/60 flex items-center justify-between gap-3 shadow-none">
-        <div className="flex items-center gap-3.5">
-          <div
-            className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0"
-            aria-hidden="true"
-          >
-            <UserIcon size={20} />
-          </div>
-          <div>
-            <span className="text-xs text-ink-soft block font-medium">
-              Keluarga Terhubung
-            </span>
-            <span className="text-sm font-bold text-ink">
-              Rina Lestari (Caregiver)
-            </span>
-          </div>
-        </div>
-        <Link
-          href="/"
-          className="text-xs font-bold text-primary hover:text-primary-strong underline underline-offset-4 focus-visible:ring-4 focus-visible:ring-focus rounded shrink-0"
-        >
-          Lihat QR
-        </Link>
-      </div>
+      <ElderLinksCard />
 
       <ReminderDemo />
 

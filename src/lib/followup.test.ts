@@ -31,9 +31,11 @@ describe("buildHelpScript", () => {
   });
 
   it("nama obat yang dilaporkan ikut, tanpa saran obat atau dosis", () => {
-    const result = finish(["tidak", "c_mild", "m_yes", { text: "Amlodipin" }]);
+    const result = finish(["tidak", "c_mild", "m_yes", { text: "Amlodipin" }, { text: "2 kali sehari" }]);
+    expect(result.complete).toBe(true);
     const text = buildHelpScript(result);
     expect(text).toContain("Jawaban: Amlodipin.");
+    expect(text).toContain("Berapa kali sehari obat ini diminum? Jawaban: 2 kali sehari.");
     expect(text).not.toMatch(/dosis|minumlah|sebaiknya minum|diagnosis:/i);
   });
 

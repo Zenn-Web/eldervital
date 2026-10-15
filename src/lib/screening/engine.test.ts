@@ -39,7 +39,7 @@ describe("alur adaptif", () => {
   });
 
   it("batuk: pertanyaan lanjutan hanya muncul bila relevan", () => {
-    const s = run(["ya", "d_lt3", "f_rare", "tidak", "tidak", "c_no", "m_yes", { text: "Amlodipin" }]);
+    const s = run(["ya", "d_lt3", "f_rare", "tidak", "tidak", "c_no", "m_yes", { text: "Amlodipin" }, { text: "2 kali sehari" }]);
     expect(asked(s)).toEqual([
       "cough_today",
       "cough_duration",
@@ -49,8 +49,10 @@ describe("alur adaptif", () => {
       "chest_check",
       "med_taken",
       "med_name",
+      "med_frequency",
     ]);
-    expect(s.answers.at(-1)?.label).toBe("Amlodipin");
+    expect(s.answers.at(-2)?.label).toBe("Amlodipin");
+    expect(s.answers.at(-1)?.label).toBe("2 kali sehari");
     expect(evaluate(tree, s).status).toBe("green");
   });
 
@@ -60,12 +62,35 @@ describe("alur adaptif", () => {
   });
 
   it("nama obat tidak diketahui disimpan sebagai belum diketahui, tidak ditebak", () => {
-    const s = run(["tidak", "c_no", "m_yes", { text: "   " }]);
-    const last = s.answers.at(-1)!;
-    expect(last.value).toBe(UNKNOWN_VALUE);
-    expect(last.unknown).toBe(true);
+    const s = run(["tidak", "c_no", "m_yes", { text: "   " }, { text: "1 kali sehari" }]);
+    const name = s.answers.find((a) => a.nodeId === "med_name")!;
+    expect(name.value).toBe(UNKNOWN_VALUE);
+    expect(name.unknown).toBe(true);
     // nama obat bukan pertanyaan penting, jadi tidak menghalangi hijau
     expect(evaluate(tree, s).status).toBe("green");
+  });
+
+  it("frekuensi obat ditanyakan setelah nama obat, juga bila nama obat tidak diketahui", () => {
+    expect(currentNode(tree, run(["tidak", "c_no", "m_yes", { text: "Amlodipin" }]))?.id).toBe("med_frequency");
+    expect(currentNode(tree, run(["tidak", "c_no", "m_yes", { text: null }]))?.id).toBe("med_frequency");
+    // Tanpa obat rutin atau belum minum: tidak ditanya nama maupun frekuensi.
+    expect(asked(run(["tidak", "c_no", "m_none"]))).not.toContain("med_frequency");
+  });
+
+  it("frekuensi obat hanya dicatat: tidak tahu tidak menghalangi hijau dan tidak memicu aturan", () => {
+    const s = run(["tidak", "c_no", "m_yes", { text: "Amlodipin" }, { text: null }]);
+    const freq = s.answers.at(-1)!;
+    expect(freq.nodeId).toBe("med_frequency");
+    expect(freq.unknown).toBe(true);
+    const r = evaluate(tree, s);
+    expect(r.status).toBe("green");
+    expect(r.reasons).toEqual([]);
+    expect(tree.rules.some((rule) => rule.when.node === "med_frequency")).toBe(false);
+  });
+
+  it("pemeriksaan yang berhenti sebelum frekuensi obat belum lengkap, tidak hijau", () => {
+    const s = run(["tidak", "c_no", "m_yes", { text: "Amlodipin" }]);
+    expect(evaluate(tree, s).status).toBe("insufficient");
   });
 
   it("isian teks dirapikan dan dibatasi panjangnya", () => {
@@ -252,9 +277,9 @@ describe("sumber jawaban dan jejak", () => {
 describe("indikator kemajuan", () => {
   it("memperkirakan jumlah pertanyaan paling banyak pada jalur", () => {
     const start = startSession(tree, { mode: "mandiri", at: AT });
-    expect(progress(tree, start)).toEqual({ position: 1, atMost: 8 });
+    expect(progress(tree, start)).toEqual({ position: 1, atMost: 9 });
     const skipped = run(["tidak"]);
-    expect(progress(tree, skipped)).toEqual({ position: 2, atMost: 4 });
+    expect(progress(tree, skipped)).toEqual({ position: 2, atMost: 5 });
   });
 });
 

@@ -11,7 +11,6 @@ import {
   progress,
   reviseAnswer,
   startSession,
-  saveExamination,
   treeV1 as tree,
   undoLast,
   type ChoiceNode,
@@ -41,6 +40,10 @@ import {
   ChevronLeftIcon,
 } from "@/components/shared/Icons";
 import ResultView from "./ResultView";
+import type { Role } from "@/lib/supabase/client";
+import { newExamId, toSaveArgs } from "@/lib/exam/payload";
+import { submitExamination, useSaveState, type SaveState } from "@/lib/exam/outbox";
+import { recordDemoHistory } from "@/lib/demo-history";
 
 type Pending =
   | { kind: "confirm"; optionId: string; label: string; heard: string }
@@ -51,14 +54,23 @@ interface Props {
   homeHref: string;
   homeLabel: string;
   onFinish?: (session: Session, result: ScreeningResult) => void;
+  /**
+   * Tujuan penyimpanan ke database. Isi bila sesi dan profil sudah ada (lansia:
+   * role "lansia", userId = profile.deviceUserId, elderId = profile.id; caregiver: role
+   * "caregiver", userId = caregiver.id, elderId = lansia yang dipilih). Bila kosong,
+   * hasil hanya masuk riwayat demo lokal berlabel simulasi.
+   */
+  saveTarget?: { role: Role; userId: string; elderId: string } | null;
 }
 
 const noopSubscribe = () => () => {};
 
-export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: Props) {
+export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish, saveTarget }: Props) {
   const source: Source = mode === "caregiver" ? "caregiver" : "lansia";
 
   const [session, setSession] = useState<Session | null>(null);
+  const [saved, setSaved] = useState<{ id: string; simulated: boolean } | null>(null);
+  const saveState = useSaveState(saved && !saved.simulated ? saved.id : null);
   const [presence, setPresence] = useState(false);
   const [voiceOn] = useState(mode === "mandiri");
   const [slow, setSlow] = useState(false);
@@ -119,9 +131,16 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
     setTextValue("");
     if (next.currentId === null) {
       const res = evaluate(tree, next);
-      saveExamination(next, res).catch((err) => {
-        console.warn("Gagal menyimpan pemeriksaan:", err);
-      });
+      // Id baru setiap kali pemeriksaan selesai: pemeriksaan yang sudah tersimpan tidak bisa
+      // diubah, jadi hasil perbaikan jawaban tersimpan sebagai pemeriksaan baru.
+      const id = newExamId();
+      if (saveTarget) {
+        submitExamination(saveTarget.role, saveTarget.userId, toSaveArgs(id, saveTarget.elderId, next, res));
+        setSaved({ id, simulated: false });
+      } else {
+        recordDemoHistory(id, next, res);
+        setSaved({ id, simulated: true });
+      }
       onFinish?.(next, res);
     }
   }
@@ -178,6 +197,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
     stopSpeaking();
     stopListening();
     setSession(null);
+    setSaved(null);
     setPending(null);
     setNotice(null);
     setTextValue("");
@@ -253,6 +273,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
         result={result}
         homeHref={homeHref}
         homeLabel={homeLabel}
+        notice={saved && <SaveNotice simulated={saved.simulated} state={saveState} mode={mode} />}
         onRestart={restart}
         onRevise={(id) => {
           stopSpeaking();
@@ -381,7 +402,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
         >
           <div className="space-y-2">
             <label htmlFor="jawaban-teks" className="block text-lg sm:text-xl font-bold text-ink">
-              Nama obat yang diminum
+              {(node as TextNode).inputLabel}
             </label>
             <input
               id="jawaban-teks"
@@ -389,7 +410,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               value={textValue}
               maxLength={(node as TextNode).maxLength}
               autoComplete="off"
-              placeholder="contoh: Amlodipine atau Obat tensi"
+              placeholder={TEXT_PLACEHOLDER[(node as TextNode).id]}
               onChange={(e) => setTextValue(e.target.value)}
               className="w-full min-h-[56px] px-5 text-lg rounded-2xl border border-line/60 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans shadow-xs"
             />
@@ -482,5 +503,34 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
         )}
       </div>
     </section>
+  );
+}
+
+// Contoh isian per pertanyaan teks. Pertanyaan tanpa contoh tidak menampilkan placeholder.
+const TEXT_PLACEHOLDER: Record<string, string> = {
+  med_name: "contoh: Amlodipine atau Obat tensi",
+  med_frequency: "contoh: 2 kali sehari",
+};
+
+function SaveNotice({ simulated, state, mode }: { simulated: boolean; state: SaveState | null; mode: Mode }) {
+  const text = simulated
+    ? "Simulasi: hasil ini hanya dicatat di riwayat demo perangkat ini, belum tersimpan ke database."
+    : !state || state.kind === "saving"
+      ? "Menyimpan hasil..."
+      : state.kind === "saved"
+        ? mode === "mandiri"
+          ? "Hasil tersimpan. Caregiver hanya bisa melihatnya bila Anda mengizinkan berbagi hasil."
+          : "Hasil tersimpan di riwayat lansia ini."
+        : state.kind === "queued"
+          ? "Hasil belum tersimpan karena tidak ada koneksi. Hasil disimpan sementara di perangkat ini dan dikirim lagi saat tersambung."
+          : `Hasil tidak bisa disimpan. ${state.message}`;
+  return (
+    <p
+      role="status"
+      aria-live="polite"
+      className="rounded-2xl border border-line/60 bg-surface p-4 text-sm sm:text-base text-ink"
+    >
+      {text}
+    </p>
   );
 }

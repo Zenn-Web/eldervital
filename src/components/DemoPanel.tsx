@@ -3,23 +3,30 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { getOfflineQueueCount } from "@/lib/screening/persistence";
+import { DEMO_HISTORY_EVENT, DEMO_HISTORY_KEY } from "@/lib/demo-history";
 import { Button } from "@/components/ui/button";
 import { SlidersIcon, CloseIcon } from "@/components/shared/Icons";
 
 export default function DemoPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const isConfigured = isSupabaseConfigured();
-  const [offlineCount, setOfflineCount] = useState(() => getOfflineQueueCount());
+  // Jumlah catatan di riwayat demo lokal (simulasi). Antrean penyimpanan sungguhan
+  // dikelola @/lib/exam/outbox dan tidak ditampilkan di panel ini.
+  const [demoCount, setDemoCount] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     const handleUpdate = () => {
-      setOfflineCount(getOfflineQueueCount());
+      try {
+        const list = JSON.parse(localStorage.getItem(DEMO_HISTORY_KEY) ?? "[]");
+        setDemoCount(Array.isArray(list) ? list.length : 0);
+      } catch {
+        setDemoCount(0);
+      }
     };
-
-    window.addEventListener("eldervital:examination_saved", handleUpdate);
-    return () => window.removeEventListener("eldervital:examination_saved", handleUpdate);
+    handleUpdate();
+    window.addEventListener(DEMO_HISTORY_EVENT, handleUpdate);
+    return () => window.removeEventListener(DEMO_HISTORY_EVENT, handleUpdate);
   }, []);
 
   const triggerToast = (msg: string) => {
@@ -43,7 +50,7 @@ export default function DemoPanel() {
       p_tree_version: "1.0.0",
       p_started_at: new Date(Date.now() - 120000).toISOString(),
       p_finished_at: new Date().toISOString(),
-      p_status: scenario === "red" ? "interrupted" : "completed",
+      p_status: scenario === "red" ? "terhenti" : "selesai",
       p_result_status: scenario,
       p_reasons:
         scenario === "red"
@@ -64,12 +71,12 @@ export default function DemoPanel() {
     };
 
     try {
-      const raw = localStorage.getItem("eldervital_saved_examinations");
+      const raw = localStorage.getItem(DEMO_HISTORY_KEY);
       const list = raw ? JSON.parse(raw) : [];
       list.unshift(simulatedRecord);
-      localStorage.setItem("eldervital_saved_examinations", JSON.stringify(list));
+      localStorage.setItem(DEMO_HISTORY_KEY, JSON.stringify(list));
       window.dispatchEvent(
-        new CustomEvent("eldervital:examination_saved", { detail: simulatedRecord })
+        new CustomEvent(DEMO_HISTORY_EVENT, { detail: simulatedRecord })
       );
       triggerToast(`${labels[scenario]} berhasil disimulasikan.`);
     } catch {
@@ -79,9 +86,8 @@ export default function DemoPanel() {
 
   const clearDemoData = () => {
     try {
-      localStorage.removeItem("eldervital_saved_examinations");
-      localStorage.removeItem("eldervital_offline_sync_queue");
-      setOfflineCount(0);
+      localStorage.removeItem(DEMO_HISTORY_KEY);
+      setDemoCount(0);
       triggerToast("Penyimpanan simulasi lokal dibersihkan.");
     } catch {
       // ignore
@@ -110,7 +116,7 @@ export default function DemoPanel() {
         >
           <SlidersIcon className="h-4 w-4 text-primary" />
           <span className="font-bold text-xs">Pintas Demo</span>
-          {offlineCount > 0 && (
+          {demoCount > 0 && (
             <span className="h-2 w-2 rounded-full bg-alert-mark" />
           )}
         </button>
@@ -149,9 +155,9 @@ export default function DemoPanel() {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-ink-soft">Antrean Offline:</span>
+              <span className="text-ink-soft">Riwayat demo (simulasi):</span>
               <span className="font-semibold text-ink">
-                {offlineCount} pemeriksaan tertunda
+                {demoCount} catatan
               </span>
             </div>
           </div>

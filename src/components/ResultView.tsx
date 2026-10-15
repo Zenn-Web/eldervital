@@ -52,6 +52,8 @@ interface Props {
   onRestart: () => void;
   homeHref: string;
   homeLabel: string;
+  /** Mis. status penyimpanan hasil. */
+  notice?: React.ReactNode;
 }
 
 export default function ResultView({
@@ -60,6 +62,7 @@ export default function ResultView({
   onRestart,
   homeHref,
   homeLabel,
+  notice,
 }: Props) {
   const theme = STATUS_THEME[result.status];
 
@@ -206,6 +209,8 @@ export default function ResultView({
           ))}
         </div>
       </div>
+
+      {notice}
 
       {/* Tombol Aksi Akhir */}
       <div className="space-y-3 pt-2">

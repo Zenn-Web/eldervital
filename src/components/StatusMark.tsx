@@ -5,8 +5,26 @@ import type { ResultStatus } from "@/lib/screening";
  * setiap status punya bentuk berbeda (lingkaran, segitiga, segi delapan, lingkaran putus-putus)
  * dan selalu ditemani kata di sebelahnya.
  */
-export default function StatusMark({ status }: { status: ResultStatus }) {
-  const common = { className: "mark", viewBox: "0 0 56 56", "aria-hidden": true, focusable: false } as const;
+export default function StatusMark({
+  status,
+  size = "md",
+  className = "",
+}: {
+  status: ResultStatus;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
+  const sizeMap = {
+    sm: "w-6 h-6 shrink-0",
+    md: "mark w-12 h-12 shrink-0",
+    lg: "mark w-16 h-16 shrink-0",
+  };
+  const common = {
+    className: `${sizeMap[size]} ${className}`.trim(),
+    viewBox: "0 0 56 56",
+    "aria-hidden": true,
+    focusable: false,
+  } as const;
   switch (status) {
     case "green":
       return (

@@ -54,6 +54,8 @@ export interface TextNode {
   topic: string;
   prompt: string;
   hint?: string;
+  /** Label kolom isian di layar, mis. "Nama obat". Komponen sebaiknya memakai ini. */
+  inputLabel: string;
   maxLength: number;
   /** Label tombol untuk "tidak tahu". Jawaban disimpan sebagai belum diketahui. */
   unknownLabel: string;

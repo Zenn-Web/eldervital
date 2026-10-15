@@ -44,7 +44,7 @@ const unsure: Option = {
 
 export const treeV1: ScreeningTree = {
   id: "gejala-dasar",
-  version: "1.0.0-demo",
+  version: "1.2.0-demo",
   title: "Pemeriksaan gejala harian",
   reviewStatus: "belum_ditinjau",
   start: "cough_today",
@@ -197,7 +197,8 @@ export const treeV1: ScreeningTree = {
       ],
       next: {
         m_yes: "med_name",
-        m_no: null,
+        // Belum minum hari ini tetap berarti punya obat rutin: tanyakan nama dan frekuensinya.
+        m_no: "med_name",
         m_none: null,
         m_unknown: null,
       },
@@ -208,8 +209,22 @@ export const treeV1: ScreeningTree = {
       topic: "Obat rutin",
       prompt: "Apa nama obat yang Anda minum?",
       hint: "Boleh diketik atau diucapkan. Jika tidak tahu, pilih tombol di bawah.",
+      inputLabel: "Nama obat",
       maxLength: 120,
       unknownLabel: "Saya tidak tahu namanya",
+      next: "med_frequency",
+    },
+    // Hanya dicatat untuk riwayat dan naskah bantuan. Tidak ada aturan warna dan tidak ada
+    // saran dosis yang dikaitkan dengan jawaban ini (aturan keselamatan klinis).
+    med_frequency: {
+      kind: "text",
+      id: "med_frequency",
+      topic: "Obat rutin",
+      prompt: "Berapa kali sehari obat ini diminum?",
+      hint: "Tulis sesuai yang biasa dijalani, misalnya 2 kali sehari. Jika tidak tahu, pilih tombol di bawah.",
+      inputLabel: "Berapa kali sehari",
+      maxLength: 60,
+      unknownLabel: "Saya tidak tahu",
       next: null,
     },
   },

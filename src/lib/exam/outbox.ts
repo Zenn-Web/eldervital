@@ -52,6 +52,11 @@ function write(role: Role, entries: Entry[]) {
   }
 }
 
+/** Membuang seluruh antrean satu peran (mis. saat profil lansia dihapus). */
+export function clearOutbox(role: Role): void {
+  write(role, []);
+}
+
 // ---------- Status per pemeriksaan (di memori, untuk tampilan) ----------
 
 const states = new Map<string, SaveState>();

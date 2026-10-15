@@ -6,17 +6,19 @@
  * anon/authenticated. Migrasi yang diuji adalah file yang sama dengan yang
  * ditempel ke Supabase.
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { newExamId, toSaveArgs, type SaveExaminationArgs } from "@/lib/exam/payload";
 import { answerChoice, evaluate, startSession, treeV1 } from "@/lib/screening";
 
-const migration = readFileSync(
-  fileURLToPath(new URL("../migrations/0001_init.sql", import.meta.url)),
-  "utf8",
-);
+// Semua migrasi, urut nama berkas: sama dengan urutan menempelkannya di Supabase.
+const migrationsDir = fileURLToPath(new URL("../migrations/", import.meta.url));
+const migrations = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith(".sql"))
+  .sort()
+  .map((f) => readFileSync(migrationsDir + f, "utf8"));
 
 const ids = {
   elderA: "00000000-0000-0000-0000-0000000000a1",
@@ -61,7 +63,7 @@ beforeAll(async () => {
   for (const id of Object.values(ids)) {
     await db.query("insert into auth.users (id) values ($1)", [id]);
   }
-  await db.exec(migration);
+  for (const sql of migrations) await db.exec(sql);
 
   await as(ids.careX);
   await db.query("insert into public.caregivers (id, display_name) values ($1, 'Sinta')", [ids.careX]);
@@ -494,5 +496,234 @@ describe("payload penyimpanan dari klien", () => {
     await callSave(toSaveArgs(id, elder, session, result));
     const [x] = await rows("select mode, caregiver_id, status, result_status from public.examinations where id = $1", [id]);
     expect(x).toEqual({ mode: "caregiver", caregiver_id: ids.careY, status: "selesai", result_status: "green" });
+  });
+});
+
+describe("riwayat yang dibaca caregiver (dashboard)", () => {
+  // Melanjutkan keadaan tes sebelumnya: elderB terhubung aktif dengan careY tanpa izin
+  // berbagi hasil; elderB punya pemeriksaan mandiri, careY mencatat satu mode caregiver.
+  it("tanpa izin berbagi: hanya pemeriksaan yang ia catat sendiri, tanpa Cek Mandiri lansia", async () => {
+    await as(ids.careY);
+    const exams = await rows("select mode from public.examinations order by mode");
+    expect(exams).toEqual([{ mode: "caregiver" }]);
+    // Jawaban dari catatannya sendiri terlihat; jawaban Cek Mandiri lansia tidak.
+    const answerSources = await rows("select distinct source from public.exam_answers");
+    expect(answerSources).toEqual([{ source: "caregiver" }]);
+  });
+
+  it("setelah lansia mengizinkan: Cek Mandiri beserta jawabannya ikut terlihat", async () => {
+    await db.exec("reset role");
+    const elder = await elderIdOf(ids.elderB);
+    const [link] = await rows("select id from public.care_links where elder_id = $1 and caregiver_id = $2", [
+      elder,
+      ids.careY,
+    ]);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("select public.set_share_results($1, true)", [link.id]);
+    await as(ids.careY);
+    const modes = await rows("select mode from public.examinations order by mode");
+    expect(modes).toEqual([{ mode: "caregiver" }, { mode: "mandiri" }]);
+    const n = (await rows("select count(*)::int c from public.exam_answers where source = 'lansia'"))[0].c;
+    expect(n).toBeGreaterThan(0);
+  });
+});
+
+describe("alur permintaan bantuan (sesuai src/lib/help.ts)", () => {
+  // elderB terhubung aktif dengan careY (tes sebelumnya). careX dihubungkan juga di sini
+  // untuk mensimulasikan dua caregiver yang menerima permintaan yang sama.
+  let req: string;
+  // Update bersyarat yang sama dengan takeHelpRequest.
+  const take = (uid: string) =>
+    rows(
+      "update public.help_requests set status = 'taken', taken_by = $2, handled_at = now() where id = $1 and status = 'open' returning id",
+      [req, uid],
+    );
+
+  it("lansia membuat permintaan baru", async () => {
+    await pair(ids.elderB, ids.careX, true, false);
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    req = (await rows("insert into public.help_requests (elder_id) values ($1) returning id", [elder]))[0].id as string;
+    expect(req).toBeTruthy();
+  });
+
+  it("lansia tidak bisa menandai permintaannya sendiri sebagai ditanggapi atau selesai", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set status = 'taken' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'done' where id = $1", [req]);
+  });
+
+  it("caregiver tidak bisa membatalkan atau menanggapi atas nama caregiver lain", async () => {
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careX]);
+  });
+
+  it("dua caregiver menanggapi bersamaan: hanya yang pertama berhasil", async () => {
+    await as(ids.careY);
+    expect(await take(ids.careY)).toHaveLength(1);
+    await as(ids.careX);
+    expect(await take(ids.careX)).toHaveLength(0);
+    await db.exec("reset role");
+    const [r] = await rows("select status, taken_by from public.help_requests where id = $1", [req]);
+    expect(r).toEqual({ status: "taken", taken_by: ids.careY });
+  });
+
+  it("lansia melihat siapa yang menanggapi, lalu bisa membatalkan", async () => {
+    await as(ids.elderB, { anonymous: true });
+    const [r] = await rows(
+      `select h.status, c.display_name from public.help_requests h
+         left join public.caregivers c on c.id = h.taken_by where h.id = $1`,
+      [req],
+    );
+    expect(r).toEqual({ status: "taken", display_name: "Budi" });
+    const done = await rows(
+      "update public.help_requests set status = 'cancelled', handled_at = now() where id = $1 and status in ('open','taken') returning id",
+      [req],
+    );
+    expect(done).toHaveLength(1);
+  });
+});
+
+describe("transisi status permintaan bantuan (migrasi 0002)", () => {
+  // Tanpa trigger 0002, semua perintah di bawah lolos RLS karena RLS hanya memeriksa nilai baru.
+  let req: string;
+
+  async function newRequest() {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    return (await rows("insert into public.help_requests (elder_id) values ($1) returning id", [elder]))[0].id as string;
+  }
+
+  it("caregiver lain tidak bisa mengambil alih permintaan yang sudah ditanggapi", async () => {
+    req = await newRequest();
+    await as(ids.careY);
+    await db.query("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+    await as(ids.careX);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careX]);
+    await fails("update public.help_requests set status = 'done', taken_by = $2 where id = $1", [req, ids.careX]);
+  });
+
+  it("hanya caregiver yang menanggapi yang bisa menandai selesai", async () => {
+    await as(ids.careY);
+    await db.query("update public.help_requests set status = 'done', handled_at = now() where id = $1", [req]);
+    await db.exec("reset role");
+    expect((await rows("select status from public.help_requests where id = $1", [req]))[0].status).toBe("done");
+  });
+
+  it("permintaan yang selesai tidak bisa dibuka lagi oleh lansia maupun caregiver", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set status = 'open' where id = $1", [req]);
+    await fails("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+  });
+
+  it("permintaan yang dibatalkan tidak bisa dihidupkan lagi oleh caregiver", async () => {
+    req = await newRequest();
+    await db.query("update public.help_requests set status = 'cancelled' where id = $1", [req]);
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'taken', taken_by = $2 where id = $1", [req, ids.careY]);
+  });
+
+  it("tidak bisa melompat dari open langsung ke done, atau memindahkan ke lansia lain", async () => {
+    req = await newRequest();
+    await as(ids.careY);
+    await fails("update public.help_requests set status = 'done', taken_by = $2 where id = $1", [req, ids.careY]);
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.help_requests set elder_id = gen_random_uuid() where id = $1", [req]);
+  });
+
+  it("fungsi trigger tidak bisa dipanggil langsung", async () => {
+    await as(ids.careY);
+    await fails("select public.check_help_request_transition()");
+  });
+});
+
+describe("jadwal pengingat", () => {
+  // elderB terhubung aktif dengan careX dan careY (tes sebelumnya).
+  it("lansia membuat, mengubah lewat upsert per label, dan menghapus jadwalnya", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query(
+      "insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'Pagi','07:00'),($1,'Malam','19:00')",
+      [elder],
+    );
+    // Sama dengan saveReminders: upsert on conflict (elder_id, label).
+    await db.query(
+      `insert into public.reminder_schedules (elder_id, label, time_of_day, enabled) values ($1,'Pagi','06:30',false)
+       on conflict (elder_id, label) do update set time_of_day = excluded.time_of_day, enabled = excluded.enabled`,
+      [elder],
+    );
+    await db.query("delete from public.reminder_schedules where label = 'Malam'");
+    const r = await rows("select label, time_of_day::text t, enabled from public.reminder_schedules order by label");
+    expect(r).toEqual([{ label: "Pagi", t: "06:30:00", enabled: false }]);
+  });
+
+  it("nama jadwal tidak boleh kosong atau lebih dari 30 karakter", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'','08:00')", [elder]);
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,$2,'08:00')", [
+      elder,
+      "x".repeat(31),
+    ]);
+  });
+
+  it("caregiver terhubung hanya bisa membaca, tidak bisa mengubah", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.careY);
+    expect(await rows("select label from public.reminder_schedules")).toEqual([{ label: "Pagi" }]);
+    await fails("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1,'Siang','12:00')", [elder]);
+    // Update dan delete oleh caregiver: RLS menyaring baris, jadi tidak ada yang berubah.
+    expect(await rows("update public.reminder_schedules set enabled = true returning id")).toEqual([]);
+    expect(await rows("delete from public.reminder_schedules returning id")).toEqual([]);
+    await db.exec("reset role");
+    expect((await rows("select enabled from public.reminder_schedules"))[0].enabled).toBe(false);
+  });
+
+  it("lansia lain tidak melihat jadwal lansia ini", async () => {
+    await as(ids.elderA, { anonymous: true }); // profil elderA sudah dihapus: sesi tanpa profil
+    expect(await rows("select * from public.reminder_schedules")).toEqual([]);
+  });
+});
+
+describe("pengaturan profil dan keluar dari profil lansia", () => {
+  it("lansia mengubah nama dan usianya; caregiver tidak bisa mengubah profil lansia", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("update public.elders set display_name = 'Pak Bono S.', age_range = '60-65' where id = $1", [elder]);
+    await as(ids.careY); // terhubung aktif, tetap tidak boleh mengubah
+    expect(await rows("update public.elders set display_name = 'diubah' returning id")).toEqual([]);
+    await db.exec("reset role");
+    expect((await rows("select display_name, age_range from public.elders where id = $1", [elder]))[0]).toEqual({
+      display_name: "Pak Bono S.",
+      age_range: "60-65",
+    });
+  });
+
+  it("lansia tidak bisa memindahkan profilnya ke sesi lain", async () => {
+    await as(ids.elderB, { anonymous: true });
+    await fails("update public.elders set device_user_id = $1", [ids.careX]);
+  });
+
+  it("caregiver hanya bisa mengubah namanya sendiri", async () => {
+    await as(ids.careY);
+    expect(await rows("update public.caregivers set display_name = 'Budi S.' returning id")).toEqual([{ id: ids.careY }]);
+    expect(await rows("update public.caregivers set display_name = 'x' where id = $1 returning id", [ids.careX])).toEqual([]);
+  });
+
+  it("keluar dari profil menghapus seluruh data lansia, termasuk bantuan, jadwal, dan token", async () => {
+    const elder = await elderIdOf(ids.elderB);
+    await as(ids.elderB, { anonymous: true });
+    await db.query("select public.create_pairing_token()");
+    await db.query("delete from public.elders where id = $1", [elder]);
+    await db.exec("reset role");
+    for (const t of ["examinations", "care_links", "help_requests", "reminder_schedules", "pairing_tokens"]) {
+      const n = (await rows(`select count(*)::int c from public.${t} where elder_id = $1`, [elder]))[0].c;
+      expect(n, t).toBe(0);
+    }
+    // Akun caregiver tidak ikut terhapus.
+    expect((await rows("select count(*)::int c from public.caregivers where id = $1", [ids.careY]))[0].c).toBe(1);
   });
 });

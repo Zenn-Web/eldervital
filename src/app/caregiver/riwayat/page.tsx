@@ -7,9 +7,11 @@ import type { ExaminationRecord } from "@/modules/caregiver/types";
 import type { ResultStatus } from "@/lib/screening";
 import StatusMark from "@/components/StatusMark";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeftIcon, ChevronRightIcon } from "@/components/shared/Icons";
+import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, CloseIcon } from "@/components/shared/Icons";
+import { DateRangePicker, formatReadableDateID } from "@/components/ui/date-picker";
 
 type FilterStatus = "all" | "attention" | "stable";
+type PeriodFilter = "all" | "today" | "7days" | "30days" | "custom";
 
 interface RawSavedRecord {
   p_id: string;
@@ -31,6 +33,10 @@ interface RawSavedRecord {
 
 export default function CaregiverHistoryPage() {
   const [filter, setFilter] = useState<FilterStatus>("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savedExams, setSavedExams] = useState<ExaminationRecord[]>([]);
 
@@ -92,18 +98,62 @@ export default function CaregiverHistoryPage() {
     return [...savedExams, ...MOCK_EXAMINATIONS];
   }, [savedExams]);
 
-  const filteredExams = allExams.filter((exam) => {
-    if (filter === "attention") return exam.status === "yellow" || exam.status === "red";
-    if (filter === "stable") return exam.status === "green";
-    return true;
-  });
+  const filteredExams = useMemo(() => {
+    return allExams.filter((exam) => {
+      // 1. Status Filter
+      if (filter === "attention" && !(exam.status === "yellow" || exam.status === "red")) {
+        return false;
+      }
+      if (filter === "stable" && exam.status !== "green") {
+        return false;
+      }
+
+      // 2. Period Filter
+      if (periodFilter === "all") return true;
+
+      const examDate = exam.timestamp ? exam.timestamp.slice(0, 10) : "";
+
+      if (periodFilter === "today") {
+        return (
+          examDate === "2026-10-15" ||
+          exam.dateFormatted.toLowerCase().includes("hari ini")
+        );
+      }
+
+      if (periodFilter === "7days") {
+        return examDate >= "2026-10-09";
+      }
+
+      if (periodFilter === "30days") {
+        return examDate >= "2026-09-15";
+      }
+
+      if (periodFilter === "custom") {
+        if (customStartDate && examDate < customStartDate) return false;
+        if (customEndDate && examDate > customEndDate) return false;
+        return true;
+      }
+
+      return true;
+    });
+  }, [allExams, filter, periodFilter, customStartDate, customEndDate]);
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
+  const handleApplyCustomRange = (start: string, end: string) => {
+    setCustomStartDate(start);
+    setCustomEndDate(end);
+    if (start || end) {
+      setPeriodFilter("custom");
+    } else {
+      setPeriodFilter("all");
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-12 max-w-4xl mx-auto px-1 sm:px-4">
+    <div className="space-y-5 pb-12 max-w-2xl mx-auto px-1 sm:px-4">
       {/* Navigasi Balik */}
       <div className="flex items-center justify-between">
         <Link
@@ -111,67 +161,159 @@ export default function CaregiverHistoryPage() {
           className="text-xs sm:text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1.5 min-h-[44px]"
         >
           <ChevronLeftIcon className="h-4 w-4" />
-          <span>Kembali ke Beranda Caregiver</span>
+          <span>Kembali ke Beranda</span>
         </Link>
         <span className="text-xs text-ink-soft">
-          Menampilkan {filteredExams.length} dari {allExams.length} catatan
+          {filteredExams.length} / {allExams.length} catatan
         </span>
       </div>
 
       <header className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold text-ink">
-          Riwayat Pemeriksaan Lansia
+        <h1 className="text-2xl sm:text-3xl font-bold text-ink font-serif">
+          Riwayat Pemeriksaan
         </h1>
         <p className="text-xs sm:text-sm text-ink-soft">
-          Daftar hasil skrining berkala Ibu Sari Rahayu, alasan klinis, dan detail jawaban tanya-jawab.
+          Daftar hasil skrining berkala Ibu Sari Rahayu beserta alasan klinis dan detail jawaban.
         </p>
       </header>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-line pb-3 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setFilter("all")}
-          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-            filter === "all"
-              ? "bg-primary text-white font-bold"
-              : "bg-surface text-ink-soft hover:bg-paper border border-line"
-          }`}
-        >
-          Semua ({allExams.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("attention")}
-          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-            filter === "attention"
-              ? "bg-warn-mark text-white font-bold"
-              : "bg-surface text-ink-soft hover:bg-paper border border-line"
-          }`}
-        >
-          Perlu Perhatian (
-          {allExams.filter((e) => e.status === "yellow" || e.status === "red").length}
-          )
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter("stable")}
-          className={`px-4 py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
-            filter === "stable"
-              ? "bg-ok-mark text-white font-bold"
-              : "bg-surface text-ink-soft hover:bg-paper border border-line"
-          }`}
-        >
-          Stabil (
-          {allExams.filter((e) => e.status === "green").length}
-          )
-        </button>
+      {/* Filter Tabs — Status & Periode */}
+      <div className="space-y-2.5">
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={`px-4 py-2 text-xs sm:text-sm rounded-full font-medium transition-colors min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus whitespace-nowrap ${
+              filter === "all"
+                ? "bg-primary text-white font-bold shadow-xs"
+                : "bg-surface text-ink-soft hover:bg-paper border border-line/60"
+            }`}
+          >
+            Semua Status ({allExams.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("attention")}
+            className={`px-4 py-2 text-xs sm:text-sm rounded-full font-medium transition-colors min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus whitespace-nowrap ${
+              filter === "attention"
+                ? "bg-warn-mark text-white font-bold shadow-xs"
+                : "bg-surface text-ink-soft hover:bg-paper border border-line/60"
+            }`}
+          >
+            Perlu Perhatian (
+            {allExams.filter((e) => e.status === "yellow" || e.status === "red").length}
+            )
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilter("stable")}
+            className={`px-4 py-2 text-xs sm:text-sm rounded-full font-medium transition-colors min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus whitespace-nowrap ${
+              filter === "stable"
+                ? "bg-ok-mark text-white font-bold shadow-xs"
+                : "bg-surface text-ink-soft hover:bg-paper border border-line/60"
+            }`}
+          >
+            Stabil (
+            {allExams.filter((e) => e.status === "green").length}
+            )
+          </button>
+        </div>
+
+        {/* Period Filter Bar with DateRangePicker trigger */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+          <button
+            type="button"
+            onClick={() => setPeriodFilter("all")}
+            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors min-h-[36px] whitespace-nowrap ${
+              periodFilter === "all"
+                ? "bg-ink text-white font-bold shadow-xs"
+                : "bg-paper text-ink-soft hover:bg-surface border border-line/60"
+            }`}
+          >
+            Semua Waktu
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriodFilter("today")}
+            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors min-h-[36px] whitespace-nowrap ${
+              periodFilter === "today"
+                ? "bg-ink text-white font-bold shadow-xs"
+                : "bg-paper text-ink-soft hover:bg-surface border border-line/60"
+            }`}
+          >
+            Hari Ini
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriodFilter("7days")}
+            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors min-h-[36px] whitespace-nowrap ${
+              periodFilter === "7days"
+                ? "bg-ink text-white font-bold shadow-xs"
+                : "bg-paper text-ink-soft hover:bg-surface border border-line/60"
+            }`}
+          >
+            7 Hari Terakhir
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriodFilter("30days")}
+            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors min-h-[36px] whitespace-nowrap ${
+              periodFilter === "30days"
+                ? "bg-ink text-white font-bold shadow-xs"
+                : "bg-paper text-ink-soft hover:bg-surface border border-line/60"
+            }`}
+          >
+            30 Hari Terakhir
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDatePickerOpen(true)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-full font-medium transition-colors min-h-[36px] whitespace-nowrap border ${
+              periodFilter === "custom"
+                ? "bg-primary text-white border-primary font-bold shadow-xs"
+                : "bg-surface text-primary border-primary/30 hover:bg-primary/5"
+            }`}
+          >
+            <CalendarIcon size={14} />
+            <span>
+              {periodFilter === "custom" && (customStartDate || customEndDate)
+                ? `${formatReadableDateID(customStartDate)} - ${formatReadableDateID(customEndDate)}`
+                : "Rentang Tanggal..."}
+            </span>
+          </button>
+        </div>
+
+        {/* Active Custom Filter Badge with quick reset */}
+        {periodFilter === "custom" && (customStartDate || customEndDate) && (
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs text-primary font-medium animate-in fade-in duration-150">
+            <span>
+              Menampilkan filter rentang:{" "}
+              <strong>
+                {customStartDate ? formatReadableDateID(customStartDate) : "Awal"} s/d{" "}
+                {customEndDate ? formatReadableDateID(customEndDate) : "Sekarang"}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setPeriodFilter("all");
+                setCustomStartDate("");
+                setCustomEndDate("");
+              }}
+              className="hover:underline flex items-center gap-1 text-ink-soft hover:text-ink font-semibold ml-2"
+            >
+              <span>Reset</span>
+              <CloseIcon size={12} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Daftar Catatan Riwayat */}
       <div className="space-y-4">
         {filteredExams.length === 0 ? (
-          <div className="rounded-xl border border-line bg-surface p-8 text-center text-ink-soft text-sm">
+          <div className="rounded-2xl border border-line/60 bg-surface p-8 text-center text-ink-soft text-sm">
             Tidak ada pemeriksaan pada kategori ini.
           </div>
         ) : (
@@ -180,7 +322,7 @@ export default function CaregiverHistoryPage() {
             return (
               <article
                 key={exam.id}
-                className="rounded-xl border border-line bg-surface p-4 sm:p-5 space-y-3.5 shadow-none"
+                className="rounded-2xl border border-line/60 bg-surface p-4 sm:p-5 space-y-3.5 shadow-none"
               >
                 {/* Baris Atas: Tanggal, Waktu, & Mode */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line/60 pb-2.5">
@@ -297,6 +439,16 @@ export default function CaregiverHistoryPage() {
           })
         )}
       </div>
+
+      {/* Date Range Picker Modal */}
+      <DateRangePicker
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        onApply={handleApplyCustomRange}
+        initialStart={customStartDate}
+        initialEnd={customEndDate}
+        title="Filter Rentang Riwayat"
+      />
     </div>
   );
 }

@@ -20,11 +20,11 @@ export default function HelpRequestAlert({
   return (
     <section
       aria-labelledby="alert-bantuan-title"
-      className="relative rounded-2xl border-2 border-alert-mark bg-alert-bg/40 p-4 sm:p-5"
+      className="relative rounded-2xl border-2 border-alert-mark bg-[#FDF2F2] p-4 sm:p-5 shadow-xs"
     >
       <div className="flex items-start gap-3.5">
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-alert-mark text-white shadow-sm"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-alert-mark text-white shadow-xs"
           aria-hidden="true"
         >
           <AlertTriangleIcon size={22} className="text-white" />
@@ -37,7 +37,7 @@ export default function HelpRequestAlert({
             >
               Permintaan Bantuan Lansia Aktif
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-alert-mark text-white">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-alert-mark text-white shadow-xs">
               {request.relativeTime}
             </span>
           </div>
@@ -49,7 +49,7 @@ export default function HelpRequestAlert({
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <a
               href={`tel:${request.phone}`}
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-alert-mark px-4 py-2 text-sm font-bold text-white hover:bg-alert-mark/90 focus:outline-none focus:ring-4 focus:ring-focus transition-colors shadow-none"
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-alert-mark hover:bg-[#8A1616] px-5 py-2.5 text-sm font-bold text-white focus:outline-none focus:ring-4 focus:ring-focus transition-colors shadow-xs"
             >
               <PhoneIcon size={18} />
               <span>Telepon ({request.phone})</span>
@@ -60,7 +60,7 @@ export default function HelpRequestAlert({
               variant="outline"
               size="sm"
               onClick={onOpenFollowUp}
-              className="border-alert-ink/30 text-alert-ink bg-surface hover:bg-alert-bg font-bold"
+              className="border-alert-mark/40 text-alert-ink bg-white hover:bg-alert-bg font-bold rounded-full min-h-[44px] px-4"
             >
               Catat Tindak Lanjut
             </Button>
@@ -70,7 +70,7 @@ export default function HelpRequestAlert({
               variant="ghost"
               size="sm"
               onClick={onResolve}
-              className="text-ink-soft hover:text-ink text-xs ml-auto gap-1"
+              className="text-ink-soft hover:text-ink text-xs ml-auto gap-1 rounded-full min-h-[44px] px-3"
             >
               <span>Selesai</span>
               <CloseIcon size={14} />

@@ -91,7 +91,7 @@ export default function DemoPanel() {
   return (
     <aside
       aria-label="Panel Pintas Demo Juri"
-      className="fixed bottom-3 right-3 z-50 select-none text-xs"
+      className="fixed bottom-20 md:bottom-4 right-4 z-40 select-none text-xs"
     >
       {/* Toast Feedback */}
       {toast && (
@@ -118,8 +118,8 @@ export default function DemoPanel() {
 
       {/* Expanded Modal / Drawer */}
       {isOpen && (
-        <div className="w-80 rounded-2xl border-2 border-primary/30 bg-surface p-4 shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between border-b border-line pb-2">
+        <div className="w-80 rounded-2xl border border-primary/30 bg-surface p-4 shadow-2xl space-y-3.5 animate-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between border-b border-line/60 pb-2">
             <div className="flex items-center gap-1.5">
               <SlidersIcon className="h-4 w-4 text-primary" />
               <strong className="text-sm font-bold text-ink">Pintas Demo 5 Menit</strong>
@@ -127,7 +127,7 @@ export default function DemoPanel() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-soft hover:bg-paper hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-paper hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               aria-label="Tutup panel"
             >
               <CloseIcon className="h-4 w-4" />
@@ -135,11 +135,11 @@ export default function DemoPanel() {
           </div>
 
           {/* Status Database */}
-          <div className="rounded-lg bg-paper p-2.5 text-[11px] space-y-1 border border-line">
+          <div className="rounded-xl bg-paper p-2.5 text-[11px] space-y-1 border border-line/60">
             <div className="flex items-center justify-between">
               <span className="text-ink-soft">Status Database:</span>
               <span
-                className={`font-bold px-1.5 py-0.5 rounded ${
+                className={`font-bold px-2 py-0.5 rounded-full ${
                   isConfigured
                     ? "bg-ok-bg text-ok-ink"
                     : "bg-warn-bg text-warn-ink"

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { BellIcon, CloseIcon, ChevronRightIcon } from "@/components/shared/Icons";
 
 /**
@@ -14,21 +12,19 @@ export default function ReminderDemo() {
 
   if (!shown) {
     return (
-      <Button
+      <button
         type="button"
-        variant="outline"
-        size="sm"
         onClick={() => setShown(true)}
-        className="w-full text-xs font-semibold text-ink-soft border-line bg-surface hover:bg-paper gap-2"
+        className="w-full py-2.5 px-4 text-xs font-semibold text-ink-soft rounded-full border border-line/60 bg-surface hover:bg-paper flex items-center justify-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         <BellIcon size={16} className="text-sogan" />
         <span>Tampilkan contoh notifikasi pengingat harian (simulasi)</span>
-      </Button>
+      </button>
     );
   }
 
   return (
-    <Card className="p-4 border-2 border-primary/30 bg-surface rounded-2xl space-y-3" role="status">
+    <div className="p-4 border border-primary/30 bg-surface rounded-2xl space-y-3 shadow-none" role="status">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
           <BellIcon size={14} />
@@ -37,7 +33,7 @@ export default function ReminderDemo() {
         <button
           type="button"
           onClick={() => setShown(false)}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-ink-soft hover:text-ink hover:bg-paper transition-colors"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-ink-soft hover:text-ink hover:bg-paper transition-colors"
           aria-label="Tutup simulasi"
         >
           <CloseIcon size={16} />
@@ -47,12 +43,12 @@ export default function ReminderDemo() {
         Waktunya pemeriksaan kondisi hari ini. Mari luangkan 1 menit untuk pemeriksaan singkat.
       </p>
       <Link
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-3 text-base font-bold text-white hover:bg-primary-strong transition-colors"
+        className="inline-flex w-full min-h-[48px] items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-3 text-base font-bold text-white hover:bg-primary-strong transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus"
         href="/lansia/periksa"
       >
         <span>Mulai Pemeriksaan Sekarang</span>
         <ChevronRightIcon size={18} />
       </Link>
-    </Card>
+    </div>
   );
 }

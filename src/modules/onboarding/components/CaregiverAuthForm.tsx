@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon } from "@/components/shared/Icons";
 
 interface CaregiverAuthFormProps {
@@ -26,25 +25,25 @@ export function CaregiverAuthForm({
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-between p-6 max-w-md mx-auto text-ink">
+    <div className="flex flex-col min-h-full flex-1 bg-paper text-ink p-6 select-none justify-between overflow-y-auto">
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-6">
         <div className="space-y-6">
           <button
             type="button"
             onClick={onBack}
-            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+            className="w-11 h-11 rounded-full border border-line/60 bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors shadow-xs"
             aria-label="Kembali ke pemilihan peran"
           >
-            <ChevronLeftIcon size={24} />
+            <ChevronLeftIcon size={22} />
           </button>
 
-          <div className="space-y-2">
-            <h1 className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight">
+          <div className="space-y-1.5">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-ink leading-tight">
               {isRegister ? "Daftar Akun Caregiver" : "Masuk ke Akun"}
             </h1>
-            <p className="text-base text-ink-soft">
+            <p className="text-sm text-ink-soft">
               {isRegister
-                ? "Daftar untuk memantau perubahan kondisi lansia dan menerima pemberitahuan alert."
+                ? "Daftar untuk memantau kondisi lansia dan menerima sinyal peringatan."
                 : "Selamat datang kembali. Masuk untuk melihat dashboard keluarga."}
             </p>
           </div>
@@ -53,16 +52,16 @@ export function CaregiverAuthForm({
           <div
             role="tablist"
             aria-label="Mode akun caregiver"
-            className="flex p-1 bg-paper rounded-xl border border-line"
+            className="flex p-1 bg-surface rounded-full border border-line/60"
           >
             <button
               type="button"
               role="tab"
               aria-selected={isRegister}
               onClick={() => setIsRegister(true)}
-              className={`flex-1 py-2 text-center font-bold text-base rounded-lg transition-colors ${
+              className={`flex-1 py-2 text-center font-bold text-sm sm:text-base rounded-full transition-colors ${
                 isRegister
-                  ? "bg-surface text-primary shadow-sm"
+                  ? "bg-primary text-white shadow-sm"
                   : "text-ink-soft hover:text-ink"
               }`}
             >
@@ -73,9 +72,9 @@ export function CaregiverAuthForm({
               role="tab"
               aria-selected={!isRegister}
               onClick={() => setIsRegister(false)}
-              className={`flex-1 py-2 text-center font-bold text-base rounded-lg transition-colors ${
+              className={`flex-1 py-2 text-center font-bold text-sm sm:text-base rounded-full transition-colors ${
                 !isRegister
-                  ? "bg-surface text-primary shadow-sm"
+                  ? "bg-primary text-white shadow-sm"
                   : "text-ink-soft hover:text-ink"
               }`}
             >
@@ -84,12 +83,12 @@ export function CaregiverAuthForm({
           </div>
 
           {/* Form Input Fields */}
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4 pt-1">
             {isRegister && (
               <div className="space-y-1.5">
                 <label
                   htmlFor="caregiver-name"
-                  className="block text-base font-bold text-ink"
+                  className="block text-sm font-bold text-ink"
                 >
                   Nama Lengkap
                 </label>
@@ -101,7 +100,7 @@ export function CaregiverAuthForm({
                   placeholder="Nama Anda"
                   required
                   autoComplete="name"
-                  className="w-full min-h-[3.25rem] px-4 py-3 rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base"
+                  className="w-full min-h-[52px] px-4 py-3 rounded-2xl border border-line/60 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base shadow-xs"
                 />
               </div>
             )}
@@ -109,7 +108,7 @@ export function CaregiverAuthForm({
             <div className="space-y-1.5">
               <label
                 htmlFor="caregiver-email"
-                className="block text-base font-bold text-ink"
+                className="block text-sm font-bold text-ink"
               >
                 Alamat Email
               </label>
@@ -121,14 +120,14 @@ export function CaregiverAuthForm({
                 placeholder="nama@email.com"
                 required
                 autoComplete="email"
-                className="w-full min-h-[3.25rem] px-4 py-3 rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base"
+                className="w-full min-h-[52px] px-4 py-3 rounded-2xl border border-line/60 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base shadow-xs"
               />
             </div>
 
             <div className="space-y-1.5">
               <label
                 htmlFor="caregiver-pw"
-                className="block text-base font-bold text-ink"
+                className="block text-sm font-bold text-ink"
               >
                 Kata Sandi
               </label>
@@ -140,21 +139,20 @@ export function CaregiverAuthForm({
                 placeholder="Minimal 6 karakter"
                 required
                 autoComplete={isRegister ? "new-password" : "current-password"}
-                className="w-full min-h-[3.25rem] px-4 py-3 rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base"
+                className="w-full min-h-[52px] px-4 py-3 rounded-2xl border border-line/60 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans text-base shadow-xs"
               />
             </div>
           </div>
         </div>
 
-        {/* Tombol Submit di dalam <form> */}
-        <div className="space-y-3 pt-6 pb-2">
-          <Button
+        {/* Tombol Submit */}
+        <div className="pt-6 pb-2">
+          <button
             type="submit"
-            size="lg"
-            className="w-full text-lg font-bold rounded-2xl"
+            className="w-full min-h-[56px] rounded-full bg-primary text-white text-base sm:text-lg font-bold hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-sm"
           >
             {isRegister ? "Daftar & Hubungkan Lansia" : "Masuk ke Dashboard"}
-          </Button>
+          </button>
         </div>
       </form>
     </div>

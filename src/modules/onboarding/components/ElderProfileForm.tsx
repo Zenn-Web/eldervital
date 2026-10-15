@@ -7,111 +7,123 @@ interface ElderProfileFormProps {
   onBack: () => void;
 }
 
-const AGE_RANGES = [
-  { id: "50-54", label: "50 – 54 tahun" },
-  { id: "55-59", label: "55 – 59 tahun" },
-  { id: "60-65", label: "60 – 65 tahun" },
-  { id: "lebih-65", label: "Lebih dari 65 tahun" },
-] as const;
-
 export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
-  const [name, setName] = useState("Bu Sari");
-  const [ageRange, setAgeRange] = useState("60-65");
+  const [salutation, setSalutation] = useState<"Bapak" | "Ibu">("Ibu");
+  const [nickname, setNickname] = useState("Sari");
+
+  // Format sapaan dinamis (contoh: "Bu Sari" atau "Pak Budi")
+  const prefix = salutation === "Ibu" ? "Bu" : "Pak";
+  const cleanName = nickname.trim();
+  const formattedDisplayName = cleanName.toLowerCase().startsWith(prefix.toLowerCase())
+    ? cleanName
+    : `${prefix} ${cleanName || (salutation === "Ibu" ? "Sari" : "Budi")}`;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
-    onSaved({ displayName: name.trim(), ageRange });
+    if (!nickname.trim()) return;
+    onSaved({
+      displayName: formattedDisplayName,
+      ageRange: "60-65",
+    });
   }
 
   return (
-    <div className="flex flex-col min-h-screen justify-between p-6 max-w-md mx-auto text-ink">
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-6">
-        <div className="space-y-6">
-          <button
-            type="button"
-            onClick={onBack}
-            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
-            aria-label="Kembali ke pemilihan peran"
-          >
-            <ChevronLeftIcon size={24} />
-          </button>
+    <div className="flex flex-col min-h-full flex-1 bg-paper text-ink p-6 select-none overflow-y-auto">
+      <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between">
+        <div className="space-y-5">
+          {/* Tombol Back Sirkular Putih */}
+          <div>
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-11 h-11 rounded-full border border-line/60 bg-surface flex items-center justify-center hover:bg-paper/80 shadow-xs focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+              aria-label="Kembali ke pemilihan peran"
+            >
+              <ChevronLeftIcon size={22} />
+            </button>
+          </div>
 
-          <div className="space-y-2">
-            <h1 className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight">
-              Profil Anda
+          {/* Judul & Penjelasan */}
+          <div className="space-y-1">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-ink leading-tight">
+              Bapak/Ibu ingin dipanggil siapa?
             </h1>
-            <p className="text-lg text-ink-soft">
-              Tidak perlu kata sandi. Cukup nama panggilan dan rentang usia agar sapaan lebih nyaman.
+            <p className="text-sm sm:text-base text-ink-soft">
+              Tidak perlu email atau password.
             </p>
           </div>
 
+          {/* Bagian Pilihan Sapaan (Bapak / Ibu) */}
+          <div className="space-y-2 pt-1">
+            <label className="block text-sm sm:text-base font-bold text-ink">
+              Sapaan
+            </label>
+            <div
+              className="flex items-center gap-3"
+              role="radiogroup"
+              aria-label="Pilih sapaan kehormatan"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={salutation === "Bapak"}
+                onClick={() => setSalutation("Bapak")}
+                className={`flex-1 min-h-[48px] rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer ${
+                  salutation === "Bapak"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-surface border border-line/70 text-ink hover:bg-paper/70"
+                }`}
+              >
+                Bapak
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={salutation === "Ibu"}
+                onClick={() => setSalutation("Ibu")}
+                className={`flex-1 min-h-[48px] rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer ${
+                  salutation === "Ibu"
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-surface border border-line/70 text-ink hover:bg-paper/70"
+                }`}
+              >
+                Ibu
+              </button>
+            </div>
+          </div>
+
           {/* Input Nama Panggilan */}
-          <div className="space-y-2">
-            <label htmlFor="elder-name" className="block text-xl font-bold text-ink">
+          <div className="space-y-1.5 pt-1">
+            <label
+              htmlFor="elder-nickname"
+              className="block text-sm sm:text-base font-bold text-ink"
+            >
               Nama panggilan
             </label>
             <input
-              id="elder-name"
+              id="elder-nickname"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="contoh: Bu Sari atau Pak Budi"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="contoh: Sari"
               required
               autoComplete="name"
-              className="w-full min-h-[3.75rem] px-4 py-3 text-xl rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans"
+              className="w-full min-h-[52px] px-4 py-3 text-base sm:text-lg font-medium rounded-xl border border-line/80 bg-surface text-ink placeholder:text-ink-soft/50 focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus shadow-xs"
             />
+            <p className="text-xs sm:text-sm text-ink-soft">
+              Akan tampil sebagai &ldquo;{formattedDisplayName}&rdquo;.
+            </p>
           </div>
-
-          {/* Pilihan Usia Semantik (Fieldset + Radiogroup) */}
-          <fieldset className="space-y-3 pt-2">
-            <legend className="text-xl font-bold text-ink">
-              Rentang usia
-            </legend>
-            <div
-              role="radiogroup"
-              aria-label="Pilihan rentang usia lansia"
-              className="grid grid-cols-1 gap-2.5"
-            >
-              {AGE_RANGES.map((r) => {
-                const selected = ageRange === r.id;
-                return (
-                  <button
-                    type="button"
-                    key={r.id}
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setAgeRange(r.id)}
-                    className={`w-full min-h-[3.75rem] px-5 py-3 rounded-xl border-2 text-left font-bold text-lg flex items-center justify-between transition-colors focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer ${
-                      selected
-                        ? "border-primary bg-primary text-white"
-                        : "border-line bg-surface text-ink hover:border-ink hover:bg-paper"
-                    }`}
-                  >
-                    <span>{r.label}</span>
-                    <span
-                      aria-hidden="true"
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        selected ? "border-white bg-white text-primary" : "border-line"
-                      }`}
-                    >
-                      {selected && <span className="w-2.5 h-2.5 rounded-full bg-primary" />}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
         </div>
 
-        {/* Tombol Simpan di dalam <form> */}
-        <div className="space-y-3 pt-6 pb-2">
+        {/* Tombol Utama Buat Profil */}
+        <div className="pt-8 pb-2">
           <Button
             type="submit"
             size="senior"
-            className="w-full text-xl font-bold rounded-2xl"
+            className="w-full min-h-[56px] text-lg font-bold rounded-full bg-primary hover:bg-primary-strong text-white shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all"
           >
-            Lanjut: Hubungkan Keluarga
+            Buat profil
           </Button>
         </div>
       </form>

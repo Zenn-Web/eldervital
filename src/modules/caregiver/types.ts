@@ -47,6 +47,8 @@ export interface FollowUpAction {
   note: string;
   recordedAt: string;
   caregiverName: string;
+  scheduledDate?: string;
+  scheduledTime?: string;
 }
 
 export interface AnswerDetail {

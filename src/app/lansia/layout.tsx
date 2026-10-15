@@ -9,7 +9,7 @@ const ITEMS = [
 export default function ElderLayout({ children }: LayoutProps<"/lansia">) {
   return (
     <div className="elder">
-      <SimBanner>Prototipe. Data dan pengingat pada versi ini bersifat simulasi.</SimBanner>
+      <SimBanner>Prototipe Demo. Data dan pengingat bersifat simulasi.</SimBanner>
       <main id="isi" className="page">
         {children}
       </main>

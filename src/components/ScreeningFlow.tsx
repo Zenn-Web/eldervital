@@ -204,30 +204,30 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             {mode === "mandiri" ? "Pemeriksaan Gejala Mandiri" : "Pemeriksaan Bersama Lansia"}
           </h1>
           {mode === "mandiri" ? (
-            <p className="text-lg text-ink-soft leading-relaxed">
+            <p className="text-base sm:text-lg text-ink-soft leading-relaxed">
               Aplikasi akan menanyakan kondisi Anda satu per satu. Anda bisa menjawab dengan tombol besar atau suara lisan. Pertanyaan bisa diulang kapan saja.
             </p>
           ) : (
-            <p className="text-lg text-ink-soft leading-relaxed">
+            <p className="text-base sm:text-lg text-ink-soft leading-relaxed">
               Bacakan setiap pertanyaan kepada lansia, atau tunjukkan layar ini. Catat jawaban yang benar-benar diberikan lansia.
             </p>
           )}
 
-          <div className="p-4 rounded-xl bg-status-alert-bg/40 border border-status-alert-mark/40 text-status-alert-ink text-sm">
+          <div className="p-4 rounded-2xl bg-status-alert-bg/40 border border-status-alert-mark/40 text-status-alert-ink text-sm">
             <strong>Keadaan Darurat:</strong> Jika merasa sangat sesak atau nyeri dada hebat saat ini, segera hubungi <strong>112</strong> atau <strong>119</strong>. Jangan menunggu pemeriksaan selesai.
           </div>
         </section>
 
         {needsPresence && (
-          <div className="p-4 rounded-xl border-2 border-line bg-surface flex items-start gap-3 cursor-pointer">
+          <div className="p-4 rounded-2xl border border-line/60 bg-surface flex items-start gap-3 cursor-pointer">
             <input
               id="hadir"
               type="checkbox"
               checked={presence}
               onChange={(e) => setPresence(e.target.checked)}
-              className="w-6 h-6 mt-0.5 rounded border-2 border-line accent-primary"
+              className="w-5 h-5 mt-0.5 rounded border border-line/60 accent-primary"
             />
-            <label htmlFor="hadir" className="text-base font-bold text-ink leading-snug cursor-pointer">
+            <label htmlFor="hadir" className="text-sm sm:text-base font-bold text-ink leading-snug cursor-pointer">
               Lansia sedang bersama saya dan dapat menjawab langsung. Saya tidak akan mengisi berdasarkan perkiraan.
             </label>
           </div>
@@ -238,7 +238,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
           size="senior"
           onClick={begin}
           disabled={needsPresence && !presence}
-          className="w-full text-xl font-bold rounded-2xl"
+          className="w-full text-lg sm:text-xl font-bold rounded-full min-h-[56px]"
         >
           Mulai Pertanyaan Pertama
         </Button>
@@ -361,10 +361,10 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               key={o.id}
               type="button"
               onClick={() => choose(o.id)}
-              className="w-full min-h-[3.75rem] px-6 py-4 rounded-2xl border-2 border-line bg-surface text-ink text-left font-bold text-xl hover:border-primary active:border-primary hover:bg-paper active:bg-paper transition-all flex items-center justify-between group shadow-none focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer"
+              className="w-full min-h-[60px] px-6 py-4 rounded-2xl border border-line/60 bg-surface text-ink text-left font-bold text-lg sm:text-xl hover:border-primary active:border-primary hover:bg-paper active:bg-paper transition-all flex items-center justify-between group shadow-xs focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer"
             >
               <span>{o.label}</span>
-              <span className="w-8 h-8 rounded-full border border-line flex items-center justify-center text-ink-soft group-hover:border-primary group-hover:text-primary transition-colors text-base shrink-0">
+              <span className="w-8 h-8 rounded-full border border-line/60 flex items-center justify-center text-ink-soft group-hover:border-primary group-hover:text-primary transition-colors text-base shrink-0">
                 <ChevronRightIcon size={20} />
               </span>
             </button>
@@ -380,7 +380,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
           }}
         >
           <div className="space-y-2">
-            <label htmlFor="jawaban-teks" className="block text-xl font-bold text-ink">
+            <label htmlFor="jawaban-teks" className="block text-lg sm:text-xl font-bold text-ink">
               Nama obat yang diminum
             </label>
             <input
@@ -391,7 +391,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               autoComplete="off"
               placeholder="contoh: Amlodipine atau Obat tensi"
               onChange={(e) => setTextValue(e.target.value)}
-              className="w-full min-h-[3.75rem] px-5 text-xl rounded-xl border-2 border-line bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans"
+              className="w-full min-h-[56px] px-5 text-lg rounded-2xl border border-line/60 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus font-sans shadow-xs"
             />
           </div>
 
@@ -399,7 +399,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             type="submit"
             size="senior"
             disabled={textValue.trim() === ""}
-            className="w-full text-xl font-bold rounded-2xl"
+            className="w-full text-lg sm:text-xl font-bold rounded-full min-h-[56px]"
           >
             Simpan Jawaban
           </Button>
@@ -409,7 +409,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             variant="outline"
             size="default"
             onClick={() => saveText(null)}
-            className="w-full text-base font-bold text-ink-soft"
+            className="w-full text-base font-bold text-ink-soft rounded-full min-h-[44px]"
           >
             {(node as TextNode).unknownLabel}
           </Button>
@@ -417,7 +417,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
       )}
 
       {notice && (
-        <div className="p-3.5 bg-paper rounded-xl border border-line text-sm text-ink-soft" role="status">
+        <div className="p-3.5 bg-paper rounded-2xl border border-line/60 text-sm text-ink-soft" role="status">
           {notice}
         </div>
       )}
@@ -429,7 +429,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
           variant="outline"
           size="sm"
           onClick={repeat}
-          className="font-bold text-sm h-11 gap-2"
+          className="font-bold text-sm h-11 gap-2 rounded-full"
         >
           <VolumeIcon size={18} />
           <span>Ulangi Suara</span>
@@ -442,7 +442,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             size="sm"
             aria-pressed={slow}
             onClick={() => setSlow(!slow)}
-            className={`font-bold text-sm h-11 gap-2 ${slow ? "border-primary bg-primary/10 text-primary" : ""}`}
+            className={`font-bold text-sm h-11 gap-2 rounded-full ${slow ? "border-primary bg-primary/10 text-primary" : ""}`}
           >
             <TurtleIcon size={18} />
             <span>Lebih Pelan: {slow ? "Ya" : "Tidak"}</span>
@@ -456,7 +456,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
             size="sm"
             onClick={listen}
             disabled={listening}
-            className="col-span-2 font-bold text-base h-12 flex items-center justify-center gap-2"
+            className="col-span-2 font-bold text-base h-12 flex items-center justify-center gap-2 rounded-full"
           >
             <MicIcon size={20} />
             <span>{listening ? "Mendengarkan ucapan..." : "Jawab dengan Suara"}</span>
@@ -474,7 +474,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish }: P
               setNotice(null);
               setSession(undoLast(tree, session));
             }}
-            className="col-span-2 font-bold text-sm text-ink-soft hover:text-ink h-11 gap-1.5"
+            className="col-span-2 font-bold text-sm text-ink-soft hover:text-ink h-11 gap-1.5 rounded-full"
           >
             <ChevronLeftIcon size={18} />
             <span>Ubah Jawaban Sebelumnya</span>

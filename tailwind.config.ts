@@ -29,6 +29,29 @@ const config: Config = {
           foreground: "#ffffff",
         },
         focus: "var(--focus)",
+        ok: {
+          DEFAULT: "var(--ok-mark)",
+          bg: "var(--ok-bg)",
+          ink: "var(--ok-ink)",
+          mark: "var(--ok-mark)",
+        },
+        warn: {
+          DEFAULT: "var(--warn-mark)",
+          bg: "var(--warn-bg)",
+          ink: "var(--warn-ink)",
+          mark: "var(--warn-mark)",
+        },
+        alert: {
+          DEFAULT: "var(--alert-mark)",
+          bg: "var(--alert-bg)",
+          ink: "var(--alert-ink)",
+          mark: "var(--alert-mark)",
+        },
+        none: {
+          DEFAULT: "var(--none-ink)",
+          bg: "var(--none-bg)",
+          ink: "var(--none-ink)",
+        },
         status: {
           ok: {
             bg: "var(--ok-bg)",

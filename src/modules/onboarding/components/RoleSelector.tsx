@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronRightIcon, ChevronLeftIcon } from "@/components/shared/Icons";
+import { ChevronLeftIcon, SolidUserIcon, SolidUsersIcon } from "@/components/shared/Icons";
 
 interface RoleSelectorProps {
   onSelectRole: (role: "lansia" | "caregiver") => void;
@@ -8,72 +8,86 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ onSelectRole, onBack }: RoleSelectorProps) {
   return (
-    <div className="flex flex-col min-h-screen justify-between p-6 max-w-md mx-auto text-ink">
-      <div className="space-y-6">
+    <div className="flex flex-col min-h-full flex-1 bg-paper text-ink select-none overflow-y-auto">
+      {/* Header Indigo dengan Lengkungan Arsitektural */}
+      <div className="relative w-full bg-primary pt-6 sm:pt-8 px-6 text-white shrink-0">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="w-12 h-12 rounded-full border border-line bg-surface flex items-center justify-center hover:bg-paper focus-visible:ring-4 focus-visible:ring-focus text-ink transition-colors"
+            className="mb-3 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             aria-label="Kembali ke layar awal"
           >
-            <ChevronLeftIcon size={24} />
+            <ChevronLeftIcon size={20} />
           </button>
         )}
 
-        <div className="space-y-2">
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-ink leading-tight">
-            Pilih Peran Anda
+        <div className="space-y-1">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            Selamat datang
           </h1>
-          <p className="text-lg text-ink-soft">
-            Pilih cara penggunaan yang paling sesuai untuk Anda hari ini.
+          <p className="text-sm sm:text-base text-white/90">
+            Siapa yang memakai ponsel ini?
           </p>
         </div>
 
-        <div className="space-y-4 pt-2">
-          {/* Opsi Lansia */}
-          <button
-            type="button"
-            onClick={() => onSelectRole("lansia")}
-            className="w-full text-left rounded-2xl border-2 border-line bg-surface p-5 hover:border-primary active:border-primary hover:bg-paper active:bg-paper transition-colors flex flex-col gap-2 group focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer"
+        {/* Siluet Gerbang / Lengkungan Tradisional (Arch Cutout) */}
+        <div className="relative w-full leading-none mt-5 sm:mt-6 -mx-6 px-6">
+          <svg
+            viewBox="0 0 400 60"
+            fill="none"
+            preserveAspectRatio="none"
+            className="w-full text-paper fill-current block -mb-[1px]"
+            aria-hidden="true"
           >
-            <div className="flex items-center justify-between w-full">
-              <span className="font-serif text-2xl font-bold text-ink group-hover:text-primary">
-                Saya yang diperiksa
-              </span>
-              <span className="w-8 h-8 rounded-full bg-paper flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
-                <ChevronRightIcon size={18} />
-              </span>
-            </div>
-            <p className="text-base text-ink-soft leading-normal">
-              Mulai pemeriksaan mandiri dengan suara atau tombol besar, atau minta keluarga mendampingi.
-            </p>
-          </button>
-
-          {/* Opsi Caregiver */}
-          <button
-            type="button"
-            onClick={() => onSelectRole("caregiver")}
-            className="w-full text-left rounded-2xl border-2 border-line bg-surface p-5 hover:border-primary active:border-primary hover:bg-paper active:bg-paper transition-colors flex flex-col gap-2 group focus-visible:ring-4 focus-visible:ring-focus focus-visible:outline-none cursor-pointer"
-          >
-            <div className="flex items-center justify-between w-full">
-              <span className="font-serif text-2xl font-bold text-ink group-hover:text-primary">
-                Saya keluarga / caregiver
-              </span>
-              <span className="w-8 h-8 rounded-full bg-paper flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
-                <ChevronRightIcon size={18} />
-              </span>
-            </div>
-            <p className="text-base text-ink-soft leading-normal">
-              Lihat perubahan kondisi orang tua, terima alert tren gejala, dan bantu mencatat jawaban pemeriksaan.
-            </p>
-          </button>
+            <path d="M 0 60 L 0 35 L 125 35 L 125 20 L 148 20 C 148 2, 172 0, 200 0 C 228 0, 252 2, 252 20 L 275 20 L 275 35 L 400 35 L 400 60 Z" />
+          </svg>
         </div>
       </div>
 
-      <p className="text-xs text-center text-ink-soft pt-6 pb-2">
-        ElderVital membantu pemantauan dan skrining gejala, bukan diagnosis medis.
-      </p>
+      {/* Bagian Pilihan Kartu Peran & Footer */}
+      <div className="flex-1 flex flex-col justify-between px-6 pt-3 pb-6">
+        <div className="space-y-4">
+          {/* Opsi Kartu Lansia */}
+          <button
+            type="button"
+            onClick={() => onSelectRole("lansia")}
+            className="w-full text-left rounded-2xl border border-line/60 bg-surface p-5 sm:p-6 shadow-xs hover:border-primary/60 hover:shadow-md active:bg-paper/80 transition-all flex flex-col items-start gap-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer"
+          >
+            <div className="text-sogan mb-1">
+              <SolidUserIcon size={30} />
+            </div>
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink tracking-tight">
+              Saya lansia
+            </h2>
+            <p className="text-sm sm:text-base text-ink-soft leading-normal">
+              Tanpa login. Profil dihubungkan ke keluarga lewat kode QR.
+            </p>
+          </button>
+
+          {/* Opsi Kartu Caregiver */}
+          <button
+            type="button"
+            onClick={() => onSelectRole("caregiver")}
+            className="w-full text-left rounded-2xl border border-line/60 bg-surface p-5 sm:p-6 shadow-xs hover:border-primary/60 hover:shadow-md active:bg-paper/80 transition-all flex flex-col items-start gap-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer"
+          >
+            <div className="text-primary mb-1">
+              <SolidUsersIcon size={30} />
+            </div>
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-ink tracking-tight">
+              Saya caregiver
+            </h2>
+            <p className="text-sm sm:text-base text-ink-soft leading-normal">
+              Keluarga atau pendamping. Masuk dengan email.
+            </p>
+          </button>
+        </div>
+
+        {/* Footer Disclaimer */}
+        <p className="text-xs text-center text-ink-soft pt-6 pb-2">
+          ElderVital membantu skrining gejala dan bukan alat diagnosis.
+        </p>
+      </div>
     </div>
   );
 }

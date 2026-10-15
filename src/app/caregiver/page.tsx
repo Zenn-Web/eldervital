@@ -89,18 +89,18 @@ export default function CaregiverDashboard() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-12 max-w-4xl mx-auto px-1 sm:px-4">
+    <div className="space-y-5 pb-12 max-w-2xl mx-auto px-1 sm:px-4">
       {/* Toast Notifikasi Feedback Cepat */}
       {saveToast && (
         <div
           role="status"
-          className="rounded-lg bg-primary text-white text-sm px-4 py-3 font-medium shadow-md flex items-center justify-between animate-in fade-in duration-200"
+          className="rounded-2xl bg-primary text-white text-sm px-4 py-3 font-medium shadow-md flex items-center justify-between animate-in fade-in duration-200"
         >
           <span>{saveToast}</span>
           <button
             type="button"
             onClick={() => setSaveToast(null)}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors ml-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors ml-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             aria-label="Tutup notifikasi"
           >
             <CloseIcon className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function CaregiverDashboard() {
       {/* Kartu Status Utama Hari Ini */}
       <section
         aria-labelledby="status-hari-ini"
-        className="rounded-xl border border-line bg-surface p-4 sm:p-6 space-y-4 shadow-none"
+        className="rounded-2xl border border-line/60 bg-surface p-4 sm:p-6 space-y-4 shadow-none"
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-3.5">
@@ -151,7 +151,7 @@ export default function CaregiverDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setIsFollowUpOpen(true)}
-              className="border-line text-ink bg-paper/60 hover:bg-paper"
+              className="border-line text-ink bg-paper/60 hover:bg-paper rounded-full"
             >
               + Catat Tindak Lanjut
             </Button>
@@ -159,7 +159,7 @@ export default function CaregiverDashboard() {
         </div>
 
         <div
-          className={`rounded-lg p-3.5 text-sm space-y-1 border ${
+          className={`rounded-xl p-3.5 text-sm space-y-1 border ${
             elderStatus === "green"
               ? "bg-ok-bg/30 border-ok-mark/30 text-ok-ink"
               : elderStatus === "yellow"
@@ -174,20 +174,15 @@ export default function CaregiverDashboard() {
         </div>
 
         {/* Panel Tombol Aksi Cepat Caregiver */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div className="pt-2">
           <Link
             href="/caregiver/periksa"
-            className="flex items-center justify-between p-3.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-bold text-sm min-h-[44px]"
+            className="flex items-center justify-between px-4 py-3 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-bold text-sm min-h-[44px]"
           >
-            <span>Pemeriksaan Bersama Lansia (Demo)</span>
-            <ChevronRightIcon className="h-4 w-4 shrink-0" />
-          </Link>
-
-          <Link
-            href="/caregiver/riwayat"
-            className="flex items-center justify-between p-3.5 rounded-lg border border-line bg-paper/50 hover:bg-paper transition-colors text-ink font-semibold text-sm min-h-[44px]"
-          >
-            <span>Lihat Riwayat Pemeriksaan Lengkap</span>
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              <span>Pemeriksaan Bersama Lansia</span>
+            </span>
             <ChevronRightIcon className="h-4 w-4 shrink-0" />
           </Link>
         </div>
@@ -197,14 +192,14 @@ export default function CaregiverDashboard() {
       <SignalGrid days={MOCK_SIGNAL_DAYS} />
 
       {/* Bagian Riwayat Tindak Lanjut & Pemeriksaan Terakhir */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Riwayat Catatan Tindak Lanjut */}
         <FollowUpList followUps={followUps} />
 
         {/* Ringkasan Pemeriksaan Terakhir */}
         <section
           aria-labelledby="pemeriksaan-terakhir"
-          className="rounded-xl border border-line bg-surface p-4 sm:p-5 space-y-3"
+          className="rounded-2xl border border-line/60 bg-surface p-4 sm:p-5 space-y-3"
         >
           <div className="flex items-center justify-between">
             <h2 id="pemeriksaan-terakhir" className="text-base font-bold text-ink">

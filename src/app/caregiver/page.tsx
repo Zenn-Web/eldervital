@@ -1,5 +1,7 @@
 "use client";
 
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { CaregiverDashboardLive } from "@/modules/caregiver/DashboardLive";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
@@ -20,7 +22,12 @@ import StatusMark from "@/components/StatusMark";
 import { Button } from "@/components/ui/button";
 import { CloseIcon, ChevronRightIcon } from "@/components/shared/Icons";
 
+/** Dengan database: dashboard dari data sungguhan. Tanpa database: tampilan demo (simulasi). */
 export default function CaregiverDashboard() {
+  return isSupabaseConfigured() ? <CaregiverDashboardLive /> : <CaregiverDashboardDemo />;
+}
+
+function CaregiverDashboardDemo() {
   const [elder] = useState(MOCK_ELDER);
   const [helpRequest, setHelpRequest] = useState(MOCK_HELP_REQUEST);
   const [followUps, setFollowUps] = useState<FollowUpAction[]>(INITIAL_FOLLOW_UPS);
@@ -132,7 +139,7 @@ export default function CaregiverDashboard() {
               </div>
               <h2 id="status-hari-ini" className="text-xl sm:text-2xl font-bold text-ink">
                 {elderStatus === "green"
-                  ? "Kondisi Stabil & Aman"
+                  ? "Tidak Ada Pemicu Perhatian"
                   : elderStatus === "yellow"
                   ? "Perlu Perhatian & Pemantauan"
                   : elderStatus === "red"

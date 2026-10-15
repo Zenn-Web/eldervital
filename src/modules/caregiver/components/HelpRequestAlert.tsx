@@ -4,14 +4,23 @@ import { PhoneIcon, AlertTriangleIcon, CloseIcon } from "@/components/shared/Ico
 
 interface HelpRequestAlertProps {
   request: HelpRequest;
-  onOpenFollowUp: () => void;
+  /** Tanpa ini, tombol Catat Tindak Lanjut tidak tampil. */
+  onOpenFollowUp?: () => void;
   onResolve: () => void;
+  /** Data sungguhan: tombol "Saya tanggapi" untuk permintaan yang belum ditanggapi. */
+  onTake?: () => void;
+  /** Data sungguhan: nama caregiver yang sudah menanggapi. */
+  takenByName?: string | null;
+  busy?: boolean;
 }
 
 export default function HelpRequestAlert({
   request,
   onOpenFollowUp,
   onResolve,
+  onTake,
+  takenByName,
+  busy,
 }: HelpRequestAlertProps) {
   if (request.status === "resolved") {
     return null;
@@ -45,8 +54,23 @@ export default function HelpRequestAlert({
             {request.elderName} menekan tombol &ldquo;Minta Bantuan&rdquo;. Segera
             pastikan keadaan lansia melalui kontak telepon langsung atau kunjungan.
           </p>
+          {takenByName && (
+            <p className="mt-1 text-sm font-bold text-alert-ink">Ditanggapi oleh {takenByName}.</p>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            {onTake && (
+              <Button
+                type="button"
+                size="sm"
+                disabled={busy}
+                onClick={onTake}
+                className="bg-alert-mark hover:bg-[#8A1616] text-white font-bold rounded-full min-h-[44px] px-5"
+              >
+                Saya tanggapi
+              </Button>
+            )}
+            {request.phone && (
             <a
               href={`tel:${request.phone}`}
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-alert-mark hover:bg-[#8A1616] px-5 py-2.5 text-sm font-bold text-white focus:outline-none focus:ring-4 focus:ring-focus transition-colors shadow-xs"
@@ -54,7 +78,9 @@ export default function HelpRequestAlert({
               <PhoneIcon size={18} />
               <span>Telepon ({request.phone})</span>
             </a>
+            )}
 
+            {onOpenFollowUp && (
             <Button
               type="button"
               variant="outline"
@@ -64,11 +90,13 @@ export default function HelpRequestAlert({
             >
               Catat Tindak Lanjut
             </Button>
+            )}
 
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              disabled={busy}
               onClick={onResolve}
               className="text-ink-soft hover:text-ink text-xs ml-auto gap-1 rounded-full min-h-[44px] px-3"
             >

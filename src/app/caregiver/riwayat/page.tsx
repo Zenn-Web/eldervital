@@ -4,7 +4,41 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { MOCK_EXAMINATIONS } from "@/modules/caregiver/mockData";
 import type { ExaminationRecord } from "@/modules/caregiver/types";
-import type { ResultStatus } from "@/lib/screening";
+import { treeV1, type ResultStatus } from "@/lib/screening";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/errors";
+import { listExaminationDetails, type ExaminationDetail } from "@/lib/exam/history";
+import { STATUS_HEADLINE } from "@/modules/caregiver/DashboardLive";
+
+/** Pemeriksaan dari database ke bentuk yang dipakai tampilan riwayat. */
+function toRecord(x: ExaminationDetail): ExaminationRecord {
+  const at = x.finishedAt ?? x.startedAt;
+  const status = x.resultStatus ?? "insufficient";
+  const flagged = new Map(x.reasons.map((r) => [r.nodeId, r.level]));
+  return {
+    id: x.id,
+    timestamp: at,
+    dateFormatted: new Date(at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+    timeFormatted: new Date(at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB",
+    mode: x.mode,
+    status,
+    headline: STATUS_HEADLINE[status],
+    summary:
+      x.reasons[0]?.text ??
+      (status === "insufficient"
+        ? "Ada pertanyaan penting yang belum diketahui jawabannya, atau pemeriksaan belum selesai."
+        : "Tidak ada aturan perhatian yang terpicu."),
+    reasons: x.reasons.map((r) => r.text),
+    answers: x.answers.map((a) => ({
+      nodeId: a.questionId,
+      topic: treeV1.nodes[a.questionId]?.topic ?? "Pemeriksaan",
+      // Teks pertanyaan hanya dari pohon versi yang sama; bila tidak ada, tampilkan id-nya.
+      question: a.question ?? a.questionId,
+      answerText: a.isUnknown ? "Belum diketahui" : a.label,
+      flag: flagged.get(a.questionId) === "red" ? "alert" : flagged.get(a.questionId) || a.isUnknown ? "warn" : "ok",
+    })),
+  };
+}
 import StatusMark from "@/components/StatusMark";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeftIcon, ChevronRightIcon, CalendarIcon, CloseIcon } from "@/components/shared/Icons";
@@ -39,6 +73,21 @@ export default function CaregiverHistoryPage() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [savedExams, setSavedExams] = useState<ExaminationRecord[]>([]);
+  // Dengan database: riwayat sungguhan (RLS menentukan pemeriksaan mana yang boleh dilihat).
+  const configured = isSupabaseConfigured();
+  const [liveExams, setLiveExams] = useState<ExaminationRecord[] | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!configured) return;
+    let alive = true;
+    listExaminationDetails("caregiver", { limit: 100 })
+      .then((list) => alive && setLiveExams(list.map(toRecord)))
+      .catch((e) => alive && setLiveError(errorMessage(e)));
+    return () => {
+      alive = false;
+    };
+  }, [configured]);
 
   useEffect(() => {
     function loadSaved() {
@@ -66,7 +115,7 @@ export default function CaregiverHistoryPage() {
           status: item.p_result_status || "green",
           headline:
             item.p_result_status === "green"
-              ? "Kondisi stabil"
+              ? "Tidak ada pemicu perhatian"
               : item.p_result_status === "yellow"
               ? "Perlu perhatian dan pemantauan"
               : item.p_result_status === "red"
@@ -95,8 +144,9 @@ export default function CaregiverHistoryPage() {
   }, []);
 
   const allExams = useMemo(() => {
+    if (configured) return liveExams ?? [];
     return [...savedExams, ...MOCK_EXAMINATIONS];
-  }, [savedExams]);
+  }, [configured, liveExams, savedExams]);
 
   const filteredExams = useMemo(() => {
     return allExams.filter((exam) => {
@@ -173,13 +223,31 @@ export default function CaregiverHistoryPage() {
           Riwayat Pemeriksaan
         </h1>
         <p className="text-xs sm:text-sm text-ink-soft">
-          Daftar hasil skrining berkala Ibu Sari Rahayu beserta alasan klinis dan detail jawaban.
+          {configured
+            ? "Daftar hasil skrining lansia yang terhubung, beserta alasan dan detail jawaban."
+            : "Daftar hasil skrining berkala Ibu Sari Rahayu beserta alasan klinis dan detail jawaban."}
         </p>
         {/* Wajib (aturan proyek): data demo diberi label simulasi. Hapus setelah halaman ini
             membaca listExaminations dari @/lib/exam/history. */}
-        <p className="rounded-xl bg-warn-bg text-warn-ink px-3 py-2 text-xs sm:text-sm font-bold">
-          Simulasi: riwayat ini data demo di perangkat ini, belum dibaca dari database.
-        </p>
+        {configured ? (
+          <>
+            <p className="text-xs sm:text-sm text-ink-soft">
+              Hanya pemeriksaan yang diizinkan lansia untuk Anda lihat, ditambah pemeriksaan yang Anda catat sendiri.
+            </p>
+            {liveError && (
+              <p role="alert" className="rounded-xl bg-alert-bg text-alert-ink px-3 py-2 text-sm font-bold">
+                Riwayat belum bisa dimuat. {liveError}
+              </p>
+            )}
+            {liveExams === null && !liveError && (
+              <p role="status" className="text-sm text-ink-soft">Memuat riwayat...</p>
+            )}
+          </>
+        ) : (
+          <p className="rounded-xl bg-warn-bg text-warn-ink px-3 py-2 text-xs sm:text-sm font-bold">
+            Simulasi: riwayat ini data demo di perangkat ini, belum dibaca dari database.
+          </p>
+        )}
       </header>
 
       {/* Filter Tabs — Status & Periode */}
@@ -430,7 +498,7 @@ export default function CaregiverHistoryPage() {
                             )}
                             {ans.flag === "ok" && (
                               <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-ok-bg text-ok-ink">
-                                Aman
+                                Tanpa pemicu
                               </span>
                             )}
                           </div>

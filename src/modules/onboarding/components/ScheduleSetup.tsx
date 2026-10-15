@@ -26,11 +26,17 @@ interface ScheduleSetupProps {
   displayName?: string;
   onFinish: (schedules: ScheduleItem[]) => void;
   onBack?: () => void;
+  /** Sedang menyimpan jadwal ke database. */
+  saving?: boolean;
+  /** Pesan bila penyimpanan gagal. */
+  error?: string | null;
 }
 
 export function ScheduleSetup({
   displayName,
   onFinish,
+  saving,
+  error,
 }: ScheduleSetupProps) {
   const [items, setItems] = useState<ScheduleItem[]>(DEFAULT_ITEMS);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -144,12 +150,22 @@ export function ScheduleSetup({
 
       {/* Bottom CTA — sticky with safe padding */}
       <div className="px-5 sm:px-6 pb-6 pt-2 flex flex-col gap-2.5 shrink-0">
+        {error && (
+          <p role="alert" className="rounded-2xl bg-alert-bg text-alert-ink px-4 py-3 text-sm font-bold">
+            {error}
+          </p>
+        )}
+        {/* Jujur soal kemampuan: notifikasi sungguhan (Web Push) belum ada di prototipe. */}
+        <p className="text-xs sm:text-sm text-ink-soft text-center">
+          Simulasi: notifikasi pengingat belum dikirim sungguhan pada prototipe ini.
+        </p>
         <button
           type="button"
+          disabled={saving}
           onClick={() => onFinish(items)}
-          className="w-full min-h-[54px] rounded-full bg-primary text-white text-base sm:text-lg font-bold hover:bg-primary-strong active:bg-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-sm"
+          className="w-full min-h-[54px] rounded-full bg-primary text-white text-base sm:text-lg font-bold hover:bg-primary-strong active:bg-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-sm disabled:opacity-70"
         >
-          Izinkan notifikasi
+          {saving ? "Menyimpan..." : "Simpan jadwal"}
         </button>
 
         <button

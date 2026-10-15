@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SplashScreen } from "./components/SplashScreen";
 import { RoleSelector } from "./components/RoleSelector";
@@ -9,6 +9,27 @@ import { ElderQrDisplay } from "./components/ElderQrDisplay";
 import { CaregiverAuthForm } from "./components/CaregiverAuthForm";
 import { CaregiverPairing } from "./components/CaregiverPairing";
 import { ScheduleSetup } from "./components/ScheduleSetup";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import { loadElderProfile } from "@/lib/auth/elder";
+import { saveReminders } from "@/lib/reminders";
+import { errorMessage } from "@/lib/supabase/errors";
+
+/**
+ * Pengguna yang sudah punya sesi tidak perlu mengulang onboarding: lansia dengan profil
+ * langsung ke /lansia, caregiver yang sudah masuk langsung ke /caregiver.
+ */
+async function existingHome(role: "lansia" | "caregiver"): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { data } = await getSupabase(role).auth.getSession();
+    const user = data.session?.user;
+    if (!user) return null;
+    if (role === "caregiver") return user.is_anonymous ? null : "/caregiver";
+    return (await loadElderProfile(user.id)) ? "/lansia" : null;
+  } catch {
+    return null; // offline atau galat: lanjutkan onboarding seperti biasa
+  }
+}
 
 type Step =
   | "splash"
@@ -22,6 +43,43 @@ type Step =
 export function OnboardingFlow() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("splash");
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  /** Simpan jadwal ke reminder_schedules (bila tersambung), lalu ke beranda lansia. */
+  async function finishSchedule(items: { label: string; time: string; enabled: boolean }[]) {
+    if (!isSupabaseConfigured()) {
+      router.push("/lansia");
+      return;
+    }
+    setScheduleSaving(true);
+    setScheduleError(null);
+    try {
+      const { data } = await getSupabase("lansia").auth.getSession();
+      const profile = data.session ? await loadElderProfile(data.session.user.id) : null;
+      if (!profile) throw new Error("profil lansia belum dibuat");
+      await saveReminders(profile.id, items);
+      router.push("/lansia");
+    } catch (e) {
+      setScheduleError(errorMessage(e));
+    } finally {
+      setScheduleSaving(false);
+    }
+  }
+
+  // Tautan "/?peran=caregiver" (dari halaman caregiver yang belum masuk) langsung ke formulir akun.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("peran") === "caregiver") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- membaca URL sekali saat dibuka
+      setStep("caregiver-auth");
+    }
+  }, []);
+
+  async function chooseRole(role: "lansia" | "caregiver") {
+    const home = await existingHome(role);
+    if (home) router.push(home);
+    else setStep(role === "lansia" ? "elder-profile" : "caregiver-auth");
+  }
   const [elderProfile, setElderProfile] = useState<{ displayName: string; ageRange: string }>({
     displayName: "Bu Sari",
     ageRange: "60-65",
@@ -47,8 +105,7 @@ export function OnboardingFlow() {
           {step === "role-select" && (
             <RoleSelector
               onSelectRole={(role) => {
-                if (role === "lansia") setStep("elder-profile");
-                else setStep("caregiver-auth");
+                chooseRole(role === "lansia" ? "lansia" : "caregiver");
               }}
               onBack={() => setStep("splash")}
             />
@@ -76,9 +133,9 @@ export function OnboardingFlow() {
           {step === "elder-schedule" && (
             <ScheduleSetup
               displayName={elderProfile.displayName}
-              onFinish={() => {
-                router.push("/lansia");
-              }}
+              onFinish={finishSchedule}
+              saving={scheduleSaving}
+              error={scheduleError}
               onBack={() => setStep("elder-qr")}
             />
           )}

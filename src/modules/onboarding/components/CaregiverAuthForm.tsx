@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { ChevronLeftIcon } from "@/components/shared/Icons";
+import { signInCaregiver, signUpCaregiver } from "@/lib/auth/caregiver";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/errors";
 
 interface CaregiverAuthFormProps {
   onSuccess: (user: { name: string; email: string }) => void;
@@ -15,14 +18,38 @@ export function CaregiverAuthForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
-    onSuccess({
-      name: isRegister ? name.trim() : "Caregiver Demo",
-      email: email.trim(),
-    });
+    // Tanpa database: alur demo berjalan seperti sebelumnya (simulasi).
+    if (!isSupabaseConfigured()) {
+      onSuccess({ name: isRegister ? name.trim() : "Caregiver Demo", email: email.trim() });
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      if (isRegister) {
+        const { needsConfirmation } = await signUpCaregiver(name.trim(), email.trim(), password);
+        if (needsConfirmation) {
+          setInfo("Akun dibuat. Buka email konfirmasi dari Supabase, lalu kembali ke sini dan masuk.");
+          setIsRegister(false);
+          return;
+        }
+      } else {
+        await signInCaregiver(email.trim(), password);
+      }
+      onSuccess({ name: name.trim(), email: email.trim() });
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -147,12 +174,23 @@ export function CaregiverAuthForm({
         </div>
 
         {/* Tombol Submit */}
-        <div className="pt-6 pb-2">
+        <div className="pt-6 pb-2 space-y-3">
+          {error && (
+            <p role="alert" className="rounded-2xl bg-alert-bg text-alert-ink px-4 py-3 text-sm font-bold">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p role="status" className="rounded-2xl bg-surface border border-line/60 px-4 py-3 text-sm text-ink">
+              {info}
+            </p>
+          )}
           <button
             type="submit"
-            className="w-full min-h-[56px] rounded-full bg-primary text-white text-base sm:text-lg font-bold hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-sm"
+            disabled={busy}
+            className="w-full min-h-[56px] rounded-full bg-primary text-white text-base sm:text-lg font-bold hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-sm disabled:opacity-70"
           >
-            {isRegister ? "Daftar & Hubungkan Lansia" : "Masuk ke Dashboard"}
+            {busy ? "Memproses..." : isRegister ? "Daftar & Hubungkan Lansia" : "Masuk ke Dashboard"}
           </button>
         </div>
       </form>

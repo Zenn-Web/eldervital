@@ -1,5 +1,7 @@
 "use client";
 
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { CaregiverLinksLive, CaregiverLogoutLive, CaregiverProfileLive } from "@/modules/caregiver/SettingsLive";
 import { useState } from "react";
 import { UserIcon, BellIcon, HandshakeIcon, ChevronRightIcon, ClockIcon } from "@/components/shared/Icons";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +15,8 @@ export default function Settings() {
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [dataSharing] = useState(true);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Dengan database: profil, hubungan, dan keluar memakai data sungguhan.
+  const configured = isSupabaseConfigured();
 
   const showDemoNotice = (feature: string) => {
     setFeedback(`Pengaturan "${feature}" disimulasikan aktif di penyimpanan lokal prototipe.`);
@@ -65,6 +69,9 @@ export default function Settings() {
           </div>
         </div>
 
+        {configured ? (
+          <CaregiverProfileLive />
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm">
           <div className="p-3.5 rounded-xl bg-paper/50 border border-line/60">
             <span className="text-xs text-ink-soft block font-medium">Nama Lengkap</span>
@@ -86,6 +93,7 @@ export default function Settings() {
             </span>
           </div>
         </div>
+        )}
       </section>
 
       {/* Bagian 2: Preferensi Notifikasi */}
@@ -104,6 +112,10 @@ export default function Settings() {
             <p className="text-xs text-ink-soft">Pemberitahuan instan saat kondisi darurat atau butuh bantuan</p>
           </div>
         </div>
+        {/* Jujur soal kemampuan: preferensi ini belum tersimpan dan notifikasi belum dikirim sungguhan. */}
+        <p className="rounded-xl bg-warn-bg text-warn-ink px-3 py-2 text-xs sm:text-sm font-bold">
+          Simulasi: preferensi notifikasi belum tersimpan, dan aplikasi belum mengirim notifikasi sungguhan.
+        </p>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3.5 rounded-xl border border-line/60 bg-paper/40">
@@ -255,6 +267,9 @@ export default function Settings() {
           </div>
         </div>
 
+        {configured ? (
+          <CaregiverLinksLive />
+        ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3.5 rounded-xl border border-line/60 bg-paper/40">
             <div>
@@ -278,10 +293,14 @@ export default function Settings() {
             <ChevronRightIcon className="h-4 w-4 text-ink-soft shrink-0" />
           </button>
         </div>
+        )}
       </section>
 
       {/* Bagian 4: Keluar / Beralih Akun */}
       <section className="pt-2">
+        {configured ? (
+          <CaregiverLogoutLive />
+        ) : (
         <button
           type="button"
           onClick={() => showDemoNotice("Keluar Akun")}
@@ -289,6 +308,7 @@ export default function Settings() {
         >
           Keluar dari Sesi Caregiver
         </button>
+        )}
       </section>
 
       {/* Time Picker Modal */}
@@ -301,7 +321,7 @@ export default function Settings() {
         }}
         initialTime={reminderTime}
         title="Pilih Waktu Pengingat Skrining"
-        subtitle="Notifikasi otomatis akan dikirim ke caregiver jika lansia belum periksa"
+        subtitle="Simulasi: notifikasi belum dikirim sungguhan pada prototipe ini"
         presets={["06.30", "07.00", "07.30", "08.00", "08.30"]}
       />
     </div>

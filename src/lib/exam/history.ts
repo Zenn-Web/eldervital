@@ -96,14 +96,33 @@ export async function latestExaminationByElder(
   return latest;
 }
 
+const DETAIL_COLUMNS = `${SUMMARY_COLUMNS}, tree_id, tree_version, reasons, actions,
+  exam_answers(position, question_id, value, label, source, is_unknown, answered_at)`;
+
+/**
+ * Seperti listExaminations, tetapi lengkap dengan jawaban dan alasan dalam satu kueri
+ * (untuk halaman riwayat yang menampilkan rincian setiap pemeriksaan).
+ */
+export async function listExaminationDetails(
+  role: Role,
+  opts: { elderId?: string; limit?: number } = {},
+): Promise<ExaminationDetail[]> {
+  let q = getSupabase(role)
+    .from("examinations")
+    .select(DETAIL_COLUMNS)
+    .order("started_at", { ascending: false })
+    .limit(opts.limit ?? 50);
+  if (opts.elderId) q = q.eq("elder_id", opts.elderId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []).map(rowToDetail);
+}
+
 /** Satu pemeriksaan lengkap dengan jawaban berurutan. null bila tidak ada atau tidak berhak. */
 export async function getExamination(role: Role, id: string): Promise<ExaminationDetail | null> {
   const { data, error } = await getSupabase(role)
     .from("examinations")
-    .select(
-      `${SUMMARY_COLUMNS}, tree_id, tree_version, reasons, actions,
-       exam_answers(position, question_id, value, label, source, is_unknown, answered_at)`,
-    )
+    .select(DETAIL_COLUMNS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;

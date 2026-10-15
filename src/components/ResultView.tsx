@@ -12,7 +12,8 @@ import {
 } from "@/components/shared/Icons";
 
 const LABEL: Record<ScreeningResult["status"], string> = {
-  green: "Aman (Hijau)",
+  // Bukan "aman": hasil hijau tidak berarti pasti sehat (aturan keselamatan klinis).
+  green: "Hijau (Tidak Ada Pemicu Perhatian)",
   yellow: "Perlu Perhatian (Kuning)",
   red: "Tanda Bahaya (Merah)",
   insufficient: "Belum Ditentukan",

@@ -1,13 +1,22 @@
 import React, { useState } from "react";
 import { QrCodeSvg } from "@/components/shared/QrCodeSvg";
 import { ChevronLeftIcon, CameraIcon } from "@/components/shared/Icons";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { CaregiverPairingLive } from "./CaregiverPairingLive";
 
 interface CaregiverPairingProps {
   onPaired: (elder: { name: string; ageRange: string; shareResults: boolean }) => void;
   onBack: () => void;
+  /** Token dari URL QR (#t=...), bila ada. */
+  initialToken?: string | null;
 }
 
-export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
+/** Dengan database: pairing sungguhan. Tanpa database: tampilan contoh berlabel simulasi. */
+export function CaregiverPairing(props: CaregiverPairingProps) {
+  return isSupabaseConfigured() ? <CaregiverPairingLive {...props} /> : <CaregiverPairingDemo {...props} />;
+}
+
+function CaregiverPairingDemo({ onPaired, onBack }: CaregiverPairingProps) {
   const [step, setStep] = useState<"scan" | "confirm">("scan");
   const [manualCode, setManualCode] = useState("");
   const [shareResults, setShareResults] = useState(true);
@@ -147,7 +156,7 @@ export function CaregiverPairing({ onPaired, onBack }: CaregiverPairingProps) {
             className="text-xs bg-paper text-ink hover:bg-white rounded-full px-3 py-1.5 font-bold flex items-center gap-1.5 transition-colors"
           >
             <CameraIcon size={14} />
-            <span>Simulasikan Pindai</span>
+            <span>Simulasikan Pindai (simulasi)</span>
           </button>
         </div>
 

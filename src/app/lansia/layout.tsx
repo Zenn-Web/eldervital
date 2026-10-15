@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/client";
 const ITEMS = [
   { href: "/lansia", label: "Beranda", exact: true },
   { href: "/lansia/periksa", label: "Cek Mandiri" },
+  { href: "/lansia/pengaturan", label: "Pengaturan" },
 ] as const;
 
 export default function ElderLayout({ children }: LayoutProps<"/lansia">) {

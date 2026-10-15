@@ -4,7 +4,7 @@ import ReminderDemo from "@/components/ReminderDemo";
 import RequestHelp from "@/components/RequestHelp";
 import ElderName from "@/components/session/ElderName";
 import ElderLinksCard from "@/components/session/ElderLinksCard";
-import { DEFAULT_REMINDERS } from "@/lib/schedule";
+import ElderReminderRows from "@/components/session/ElderReminderRows";
 import {
   ClockIcon,
   ChevronRightIcon,
@@ -74,17 +74,7 @@ export default function ElderHome() {
 
         {/* Daftar waktu */}
         <div className="divide-y divide-line/40">
-          {DEFAULT_REMINDERS.map((r) => (
-            <div
-              key={r.id}
-              className="px-5 py-3.5 flex justify-between items-center"
-            >
-              <span className="font-bold text-ink text-base">{r.label}</span>
-              <span className="font-mono text-sm text-ink-soft">
-                Pukul {r.time}
-              </span>
-            </div>
-          ))}
+          <ElderReminderRows />
         </div>
 
         {/* Catatan kecil */}

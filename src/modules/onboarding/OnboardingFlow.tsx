@@ -11,6 +11,8 @@ import { CaregiverPairing } from "./components/CaregiverPairing";
 import { ScheduleSetup } from "./components/ScheduleSetup";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadElderProfile } from "@/lib/auth/elder";
+import { saveReminders } from "@/lib/reminders";
+import { errorMessage } from "@/lib/supabase/errors";
 
 /**
  * Pengguna yang sudah punya sesi tidak perlu mengulang onboarding: lansia dengan profil
@@ -41,6 +43,29 @@ type Step =
 export function OnboardingFlow() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("splash");
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  /** Simpan jadwal ke reminder_schedules (bila tersambung), lalu ke beranda lansia. */
+  async function finishSchedule(items: { label: string; time: string; enabled: boolean }[]) {
+    if (!isSupabaseConfigured()) {
+      router.push("/lansia");
+      return;
+    }
+    setScheduleSaving(true);
+    setScheduleError(null);
+    try {
+      const { data } = await getSupabase("lansia").auth.getSession();
+      const profile = data.session ? await loadElderProfile(data.session.user.id) : null;
+      if (!profile) throw new Error("profil lansia belum dibuat");
+      await saveReminders(profile.id, items);
+      router.push("/lansia");
+    } catch (e) {
+      setScheduleError(errorMessage(e));
+    } finally {
+      setScheduleSaving(false);
+    }
+  }
 
   // Tautan "/?peran=caregiver" (dari halaman caregiver yang belum masuk) langsung ke formulir akun.
   useEffect(() => {
@@ -108,9 +133,9 @@ export function OnboardingFlow() {
           {step === "elder-schedule" && (
             <ScheduleSetup
               displayName={elderProfile.displayName}
-              onFinish={() => {
-                router.push("/lansia");
-              }}
+              onFinish={finishSchedule}
+              saving={scheduleSaving}
+              error={scheduleError}
               onBack={() => setStep("elder-qr")}
             />
           )}

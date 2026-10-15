@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { ScreeningResult } from "@/lib/screening";
 import StatusMark from "./StatusMark";
+import HelpScriptPanel from "./HelpScriptPanel";
+import type { AgeRange } from "@/lib/auth/elder";
 import {
   PhoneIcon,
   AlertTriangleIcon,
@@ -55,6 +57,8 @@ interface Props {
   homeLabel: string;
   /** Mis. status penyimpanan hasil. */
   notice?: React.ReactNode;
+  /** Nama dan usia lansia untuk naskah bantuan pada hasil merah. */
+  helpScriptFor?: { elderName?: string | null; ageRange?: AgeRange | null };
 }
 
 export default function ResultView({
@@ -64,6 +68,7 @@ export default function ResultView({
   homeHref,
   homeLabel,
   notice,
+  helpScriptFor,
 }: Props) {
   const theme = STATUS_THEME[result.status];
 
@@ -127,6 +132,11 @@ export default function ResultView({
             ))}
           </div>
         </div>
+      )}
+
+      {/* Naskah bantuan saat menelepon (hanya hasil merah) */}
+      {result.status === "red" && (
+        <HelpScriptPanel result={result} elderName={helpScriptFor?.elderName} ageRange={helpScriptFor?.ageRange} />
       )}
 
       {/* Alasan Hasil Terdeteksi */}

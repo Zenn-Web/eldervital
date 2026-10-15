@@ -75,7 +75,11 @@ export default function CaregiverCheck() {
   return (
     <div className="space-y-3">
       <p className="text-sm text-ink-soft max-w-md mx-auto">Pemeriksaan untuk {elder.elderName ?? "lansia"}</p>
-      <ScreeningFlow {...flow} saveTarget={{ role: "caregiver", userId: profile.id, elderId: elder.elderId }} />
+      <ScreeningFlow
+        {...flow}
+        saveTarget={{ role: "caregiver", userId: profile.id, elderId: elder.elderId }}
+        helpScriptFor={{ elderName: elder.elderName }}
+      />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Bitter } from "next/font/google";
 import localFont from "next/font/local";
 import RegisterSW from "@/components/RegisterSW";
+import DemoPanel from "@/components/DemoPanel";
 import "./globals.css";
 
 // Atkinson Hyperlegible Next (SIL OFL), disajikan dari server sendiri agar tetap
@@ -17,6 +19,13 @@ const sans = localFont({
   display: "swap",
 });
 
+const serif = Bitter({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["600", "700"],
+});
+
 export const metadata: Metadata = {
   title: { default: "ElderVital", template: "%s | ElderVital" },
   description:
@@ -27,20 +36,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0e5a4c",
+  themeColor: "#2B3A6B",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={sans.variable}>
+    <html lang="id" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <a className="skip" href="#isi">
           Lewati ke isi utama
         </a>
         {children}
         <RegisterSW />
+        <DemoPanel />
       </body>
     </html>
   );

@@ -10,6 +10,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * Variabel NEXT_PUBLIC_* dibaca saat build, jadi harus diisi di Vercel sebelum deploy.
  */
 
+export type Role = "lansia" | "caregiver";
+
 export class SupabaseNotConfiguredError extends Error {
   constructor() {
     super(
@@ -26,14 +28,23 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
-let cached: SupabaseClient | null = null;
+const cached: Partial<Record<Role, SupabaseClient>> = {};
 
-export function getSupabase(): SupabaseClient {
+export function getSupabase(role: Role): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new SupabaseNotConfiguredError();
-  cached ??= createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true },
+  cached [role] ??= createClient(url, key, {
+    auth: { 
+      persistSession: true, 
+      autoRefreshToken: true, 
+      storageKey: `eldervital-auth-${role}`, 
+      detectSessionInUrl: false, },
   });
-  return cached;
+  return cached[role];
 }
+
+
+
+
+

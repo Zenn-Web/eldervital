@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon } from "@/components/shared/Icons";
+import { AGE_RANGES, createElderProfile, type AgeRange } from "@/lib/auth/elder";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/errors";
 
 interface ElderProfileFormProps {
   onSaved: (data: { displayName: string; ageRange: string }) => void;
@@ -9,7 +12,10 @@ interface ElderProfileFormProps {
 
 export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
   const [salutation, setSalutation] = useState<"Bapak" | "Ibu">("Ibu");
-  const [nickname, setNickname] = useState("Sari");
+  const [nickname, setNickname] = useState("");
+  const [ageRange, setAgeRange] = useState<AgeRange | "">("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Format sapaan dinamis (contoh: "Bu Sari" atau "Pak Budi")
   const prefix = salutation === "Ibu" ? "Bu" : "Pak";
@@ -18,13 +24,26 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
     ? cleanName
     : `${prefix} ${cleanName || (salutation === "Ibu" ? "Sari" : "Budi")}`;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nickname.trim()) return;
-    onSaved({
-      displayName: formattedDisplayName,
-      ageRange: "60-65",
-    });
+    const data = { displayName: formattedDisplayName.slice(0, 60), ageRange: ageRange || "" };
+    // Tanpa database: alur demo berjalan seperti sebelumnya (simulasi).
+    if (!isSupabaseConfigured()) {
+      onSaved(data);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      // Masuk anonim (bila belum) lalu membuat profil; aman diulang bila jaringan putus.
+      await createElderProfile(data.displayName, ageRange || null);
+      onSaved(data);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -114,16 +133,47 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
               Akan tampil sebagai &ldquo;{formattedDisplayName}&rdquo;.
             </p>
           </div>
+
+          {/* Rentang Usia (opsional) */}
+          <div className="space-y-1.5 pt-1">
+            <label htmlFor="elder-age" className="block text-sm sm:text-base font-bold text-ink">
+              Usia (boleh dilewati)
+            </label>
+            <select
+              id="elder-age"
+              value={ageRange}
+              onChange={(e) => setAgeRange(e.target.value as AgeRange | "")}
+              className="w-full min-h-[52px] px-4 py-3 text-base sm:text-lg font-medium rounded-xl border border-line/80 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus shadow-xs"
+            >
+              <option value="">Tidak diisi</option>
+              {AGE_RANGES.map((a) => (
+                <option key={a.value} value={a.value}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <p className="text-xs sm:text-sm text-ink-soft">
+            Profil disimpan untuk perangkat dan browser ini saja. Bila data browser dihapus atau
+            ganti ponsel, profil tidak bisa dipulihkan sendiri dan perlu dibuat serta dihubungkan ulang.
+          </p>
         </div>
 
         {/* Tombol Utama Buat Profil */}
-        <div className="pt-8 pb-2">
+        <div className="pt-8 pb-2 space-y-3">
+          {error && (
+            <p role="alert" className="rounded-2xl bg-alert-bg text-alert-ink px-4 py-3 text-sm font-bold">
+              {error}
+            </p>
+          )}
           <Button
             type="submit"
+            disabled={busy}
             size="senior"
             className="w-full min-h-[56px] text-lg font-bold rounded-full bg-primary hover:bg-primary-strong text-white shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all"
           >
-            Buat profil
+            {busy ? "Membuat profil..." : "Buat profil"}
           </Button>
         </div>
       </form>

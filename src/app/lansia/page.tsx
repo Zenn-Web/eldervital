@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ReminderDemo from "@/components/ReminderDemo";
 import RequestHelp from "@/components/RequestHelp";
+import ElderName from "@/components/session/ElderName";
 import { DEFAULT_REMINDERS } from "@/lib/schedule";
 import {
   UserIcon,
@@ -23,7 +24,9 @@ export default function ElderHome() {
         </span>
         <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-ink leading-tight">
           Selamat pagi,{" "}
-          <span className="text-primary">Bu Sari</span>
+          <span className="text-primary">
+            <ElderName fallback="Bu Sari" />
+          </span>
         </h1>
         <p className="text-base text-ink-soft leading-relaxed">
           Bagaimana kondisi Ibu hari ini? Mari luangkan sebentar untuk

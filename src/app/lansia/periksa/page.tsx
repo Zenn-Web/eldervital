@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import ScreeningFlow from "@/components/ScreeningFlow";
+import ElderCheck from "@/components/checks/ElderCheck";
 
 export const metadata: Metadata = { title: "Cek Mandiri" };
 
 export default function SelfCheck() {
-  return <ScreeningFlow mode="mandiri" homeHref="/lansia" homeLabel="Kembali ke beranda" />;
+  return <ElderCheck />;
 }

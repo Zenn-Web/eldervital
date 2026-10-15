@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import ScreeningFlow from "@/components/ScreeningFlow";
+import CaregiverCheck from "@/components/checks/CaregiverCheck";
 
 export const metadata: Metadata = { title: "Pemeriksaan bersama" };
 
 export default function AssistedCheck() {
-  return <ScreeningFlow mode="caregiver" homeHref="/caregiver" homeLabel="Kembali ke beranda" />;
+  return <CaregiverCheck />;
 }

@@ -12,6 +12,7 @@ export default function ElderCheck() {
       homeHref="/lansia"
       homeLabel="Kembali ke beranda"
       saveTarget={profile ? { role: "lansia", userId: profile.deviceUserId, elderId: profile.id } : null}
+      helpScriptFor={profile ? { elderName: profile.displayName, ageRange: profile.ageRange } : undefined}
     />
   );
 }

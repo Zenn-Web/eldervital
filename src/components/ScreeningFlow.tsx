@@ -41,6 +41,7 @@ import {
 } from "@/components/shared/Icons";
 import ResultView from "./ResultView";
 import type { Role } from "@/lib/supabase/client";
+import type { AgeRange } from "@/lib/auth/elder";
 import { newExamId, toSaveArgs } from "@/lib/exam/payload";
 import { submitExamination, useSaveState, type SaveState } from "@/lib/exam/outbox";
 import { recordDemoHistory } from "@/lib/demo-history";
@@ -61,11 +62,13 @@ interface Props {
    * hasil hanya masuk riwayat demo lokal berlabel simulasi.
    */
   saveTarget?: { role: Role; userId: string; elderId: string } | null;
+  /** Nama dan usia lansia untuk naskah bantuan pada hasil merah. */
+  helpScriptFor?: { elderName?: string | null; ageRange?: AgeRange | null };
 }
 
 const noopSubscribe = () => () => {};
 
-export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish, saveTarget }: Props) {
+export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish, saveTarget, helpScriptFor }: Props) {
   const source: Source = mode === "caregiver" ? "caregiver" : "lansia";
 
   const [session, setSession] = useState<Session | null>(null);
@@ -274,6 +277,7 @@ export default function ScreeningFlow({ mode, homeHref, homeLabel, onFinish, sav
         homeHref={homeHref}
         homeLabel={homeLabel}
         notice={saved && <SaveNotice simulated={saved.simulated} state={saveState} mode={mode} />}
+        helpScriptFor={helpScriptFor}
         onRestart={restart}
         onRevise={(id) => {
           stopSpeaking();

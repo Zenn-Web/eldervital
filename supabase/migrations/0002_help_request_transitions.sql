@@ -17,9 +17,11 @@
 -- Kolom elder_id dan created_at tidak pernah boleh diubah.
 --
 -- Ini hanya memperketat: tidak ada akses baru yang dibuka.
--- Cara pakai: tempel seluruh file ini di Supabase > SQL Editor > Run (sekali saja).
+-- Cara pakai: tempel seluruh file ini di Supabase > SQL Editor > Run.
+-- Aman dijalankan ulang (idempoten): fungsi diganti dan trigger dibuat ulang, sehingga
+-- integrasi Supabase Preview yang menjalankan ulang migrasi tidak gagal.
 
-create function public.check_help_request_transition()
+create or replace function public.check_help_request_transition()
 returns trigger language plpgsql set search_path = '' as $$
 begin
   if new.elder_id is distinct from old.elder_id or new.created_at is distinct from old.created_at then
@@ -47,6 +49,7 @@ end $$;
 -- Fungsi trigger tidak perlu dipanggil langsung oleh siapa pun.
 revoke all on function public.check_help_request_transition() from public, anon, authenticated;
 
+drop trigger if exists help_requests_transition on public.help_requests;
 create trigger help_requests_transition
   before update on public.help_requests
   for each row execute function public.check_help_request_transition();

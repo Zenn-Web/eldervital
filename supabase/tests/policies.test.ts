@@ -727,3 +727,24 @@ describe("pengaturan profil dan keluar dari profil lansia", () => {
     expect((await rows("select count(*)::int c from public.caregivers where id = $1", [ids.careY]))[0].c).toBe(1);
   });
 });
+
+describe("migrasi aman dijalankan ulang (Supabase Preview)", () => {
+  it("0002 bisa dijalankan dua kali, dan trigger transisi tetap berlaku", async () => {
+    await db.exec("reset role");
+    const sql = readFileSync(migrationsDir + "0002_help_request_transitions.sql", "utf8");
+    await db.exec(sql); // jalankan ulang: tidak boleh gagal
+    const triggers = await rows(
+      "select tgname from pg_trigger where tgrelid = 'public.help_requests'::regclass and not tgisinternal",
+    );
+    expect(triggers).toEqual([{ tgname: "help_requests_transition" }]); // tidak ganda
+    // Aturan tetap berlaku setelah dijalankan ulang (trigger juga berlaku untuk superuser).
+    const uid = "00000000-0000-0000-0000-0000000000d1";
+    await db.query("insert into auth.users (id) values ($1)", [uid]);
+    const elder = (
+      await rows("insert into public.elders (device_user_id, display_name) values ($1, 'Uji') returning id", [uid])
+    )[0].id;
+    const req = (await rows("insert into public.help_requests (elder_id) values ($1) returning id", [elder]))[0].id;
+    await fails("update public.help_requests set status = 'done' where id = $1", [req]);
+    await db.query("update public.help_requests set status = 'cancelled' where id = $1", [req]); // transisi sah
+  });
+});

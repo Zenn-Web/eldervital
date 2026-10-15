@@ -56,9 +56,12 @@ describe("alur adaptif", () => {
     expect(evaluate(tree, s).status).toBe("green");
   });
 
-  it("nama obat hanya ditanyakan bila sudah minum obat", () => {
+  it("nama obat ditanyakan bila punya obat rutin, sudah maupun belum diminum", () => {
     expect(currentNode(tree, run(["tidak", "c_no", "m_yes"]))?.id).toBe("med_name");
-    expect(run(["tidak", "c_no", "m_no"]).status).toBe("completed");
+    expect(currentNode(tree, run(["tidak", "c_no", "m_no"]))?.id).toBe("med_name");
+    // Tidak punya obat rutin, atau tidak yakin: tidak ditanya nama maupun frekuensi.
+    expect(run(["tidak", "c_no", "m_none"]).status).toBe("completed");
+    expect(run(["tidak", "c_no", "m_unknown"]).status).toBe("completed");
   });
 
   it("nama obat tidak diketahui disimpan sebagai belum diketahui, tidak ditebak", () => {
@@ -152,8 +155,11 @@ describe("status kuning", () => {
   });
 
   it("obat belum diminum dicatat tanpa saran dosis", () => {
-    const r = evaluate(tree, run(["tidak", "c_no", "m_no"]));
+    const s = run(["tidak", "c_no", "m_no", { text: "Amlodipin" }, { text: "2 kali sehari" }]);
+    expect(asked(s).slice(-3)).toEqual(["med_taken", "med_name", "med_frequency"]);
+    const r = evaluate(tree, s);
     expect(r.status).toBe("yellow");
+    expect(r.reasons.map((x) => x.ruleId)).toEqual(["Y-MED-MISSED"]);
     const text = [r.summary, ...r.actions, ...r.reasons.map((x) => x.text)].join(" ");
     expect(text).not.toMatch(/gandakan|tambah(kan)? dosis|ubah dosis|kurangi dosis|ganti obat/i);
   });

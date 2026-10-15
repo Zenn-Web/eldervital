@@ -44,7 +44,7 @@ const unsure: Option = {
 
 export const treeV1: ScreeningTree = {
   id: "gejala-dasar",
-  version: "1.1.0-demo",
+  version: "1.2.0-demo",
   title: "Pemeriksaan gejala harian",
   reviewStatus: "belum_ditinjau",
   start: "cough_today",
@@ -197,7 +197,8 @@ export const treeV1: ScreeningTree = {
       ],
       next: {
         m_yes: "med_name",
-        m_no: null,
+        // Belum minum hari ini tetap berarti punya obat rutin: tanyakan nama dan frekuensinya.
+        m_no: "med_name",
         m_none: null,
         m_unknown: null,
       },

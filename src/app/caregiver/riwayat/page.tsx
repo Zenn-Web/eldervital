@@ -175,6 +175,11 @@ export default function CaregiverHistoryPage() {
         <p className="text-xs sm:text-sm text-ink-soft">
           Daftar hasil skrining berkala Ibu Sari Rahayu beserta alasan klinis dan detail jawaban.
         </p>
+        {/* Wajib (aturan proyek): data demo diberi label simulasi. Hapus setelah halaman ini
+            membaca listExaminations dari @/lib/exam/history. */}
+        <p className="rounded-xl bg-warn-bg text-warn-ink px-3 py-2 text-xs sm:text-sm font-bold">
+          Simulasi: riwayat ini data demo di perangkat ini, belum dibaca dari database.
+        </p>
       </header>
 
       {/* Filter Tabs — Status & Periode */}

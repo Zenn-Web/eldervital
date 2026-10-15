@@ -11,9 +11,10 @@ export function CaregiverAuthForm({
   onBack,
 }: CaregiverAuthFormProps) {
   const [isRegister, setIsRegister] = useState(true);
-  const [name, setName] = useState("Rina Lestari");
-  const [email, setEmail] = useState("rina.lestari@email.com");
-  const [password, setPassword] = useState("password123");
+  // Kosong: formulir login tidak boleh terisi kredensial contoh.
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

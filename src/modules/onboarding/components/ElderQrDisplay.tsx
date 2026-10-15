@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { QrCodeSvg } from "@/components/shared/QrCodeSvg";
+import { TOKEN_TTL_MINUTES } from "@/lib/pairing";
 
 interface ElderQrDisplayProps {
   displayName: string;
@@ -12,7 +13,8 @@ export function ElderQrDisplay({
   onNext,
   // onBack kept in interface for API compatibility; not used in this screen
 }: ElderQrDisplayProps) {
-  const INITIAL_SECONDS = 900; // 15 menit
+  // Sama dengan masa berlaku token di database (create_pairing_token: 10 menit).
+  const INITIAL_SECONDS = TOKEN_TTL_MINUTES * 60;
   const [secondsLeft, setSecondsLeft] = useState(INITIAL_SECONDS);
   const [token, setToken] = useState("AXYKBX");
 
@@ -58,6 +60,11 @@ export function ElderQrDisplay({
         <div className="p-3 bg-white rounded-xl border border-line/40 shadow-sm">
           <QrCodeSvg token={token} size={185} />
         </div>
+        {/* Wajib (aturan proyek): QR ini pola contoh, belum token dari database dan belum bisa
+            dipindai. Hapus label setelah memakai createPairingToken + pairingUrl + paket qrcode. */}
+        <p className="rounded-xl bg-warn-bg text-warn-ink px-3 py-2 text-xs sm:text-sm font-bold text-center">
+          Simulasi: QR dan kode ini contoh tampilan, belum bisa dipakai untuk menghubungkan.
+        </p>
 
         {/* Kode Manual */}
         <p className="text-xs sm:text-sm text-ink-soft text-center">

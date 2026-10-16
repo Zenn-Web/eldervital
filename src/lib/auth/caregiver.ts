@@ -31,6 +31,15 @@ export async function signInCaregiver(email: string, password: string): Promise<
   if (error) throw error;
 }
 
+/** Memulai OAuth Google dan kembali ke layar pairing caregiver setelah berhasil. */
+export async function signInCaregiverWithGoogle(): Promise<void> {
+  const { error } = await db().auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${window.location.origin}/caregiver/hubungkan` },
+  });
+  if (error) throw error;
+}
+
 /** Hanya perangkat ini yang keluar (scope "local"), sesi di perangkat lain tetap. */
 export async function signOutCaregiver(): Promise<void> {
   const { error } = await db().auth.signOut({ scope: "local" });

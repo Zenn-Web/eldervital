@@ -5,9 +5,9 @@ import { useElderSession } from "./ElderSession";
 import {
   ensureDefaultReminders,
   formatTime,
+  commitStoredReminders,
   getStoredReminders,
   saveStoredReminders,
-  saveReminders,
   type StoredReminder,
 } from "@/lib/reminders";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -92,6 +92,7 @@ export default function ElderReminderRows() {
 
   const [editingReminder, setEditingReminder] = useState<StoredReminder | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastKind, setToastKind] = useState<"ok" | "error">("ok");
 
   // Jika tersambung dengan database, sinkronkan jadwal dari database saat pertama dibuka
   useEffect(() => {
@@ -114,33 +115,26 @@ export default function ElderReminderRows() {
     };
   }, [profile]);
 
-  function handleSaveTime(newTime: string) {
+  async function handleSaveTime(newTime: string) {
     if (!editingReminder) return;
 
     const updated = reminders.map((r) =>
       r.id === editingReminder.id ? { ...r, time: newTime, enabled: true } : r,
     );
-
-    saveStoredReminders(updated);
-
-    // Kirim pembaruan ke database bila profil tersedia
-    if (profile) {
-      saveReminders(
-        profile.id,
-        updated.map((u) => ({
-          label: u.label,
-          time: u.time,
-          enabled: u.enabled,
-        })),
-      ).catch(() => {});
-    }
-
     const label = editingReminder.label;
     setEditingReminder(null);
-    setToastMessage(`Jadwal pengingat ${label} diubah ke ${newTime}`);
+
+    // Tersambung: tunggu database. Bila gagal, perubahan dibatalkan dan pesannya ditampilkan.
+    const res = await commitStoredReminders(profile?.id ?? null, reminders, updated);
+    setToastKind(res.ok ? "ok" : "error");
+    setToastMessage(
+      res.ok
+        ? `Jadwal pengingat ${label} diubah ke ${newTime}`
+        : `Jadwal ${label} belum tersimpan, jadi tidak diubah. ${res.message}`,
+    );
     setTimeout(() => {
       setToastMessage(null);
-    }, 3500);
+    }, res.ok ? 3500 : 6000);
   }
 
   const shown = reminders.filter((r) => r.enabled);
@@ -151,9 +145,13 @@ export default function ElderReminderRows() {
         <div
           role="status"
           aria-live="polite"
-          className="px-5 py-2.5 bg-ok-bg text-ok-ink text-sm font-bold flex items-center gap-2 border-b border-ok-mark/30 animate-in fade-in duration-200"
+          className={`${
+            toastKind === "ok"
+              ? "px-5 py-2.5 bg-ok-bg text-ok-ink text-sm font-bold flex items-center gap-2 border-b border-ok-mark/30"
+              : "px-5 py-2.5 bg-alert-bg text-alert-ink text-sm font-bold flex items-center gap-2 border-b border-alert-mark/30"
+          } animate-in fade-in duration-200`}
         >
-          <CheckIcon size={16} className="text-ok-mark shrink-0" />
+          {toastKind === "ok" && <CheckIcon size={16} className="text-ok-mark shrink-0" />}
           <span>{toastMessage}</span>
         </div>
       )}

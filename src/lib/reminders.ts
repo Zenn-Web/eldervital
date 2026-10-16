@@ -1,5 +1,6 @@
 import { DEFAULT_REMINDERS } from "@/lib/schedule";
 import { getSupabase, type Role } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/supabase/errors";
 
 /**
  * Jadwal pengingat pemeriksaan (spesifikasi bagian 6). Disimpan di reminder_schedules.
@@ -67,6 +68,48 @@ export function saveStoredReminders(items: StoredReminder[]): void {
     window.dispatchEvent(new Event("eldervital:reminders-updated"));
   } catch {
     // ignore
+  }
+}
+
+/** Membuang salinan jadwal di perangkat (mis. saat profil lansia dihapus). */
+export function clearStoredReminders(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_REMINDERS_KEY);
+    window.dispatchEvent(new Event("eldervital:reminders-updated"));
+  } catch {
+    // Penyimpanan diblokir: tidak ada yang perlu dibuang.
+  }
+}
+
+export type CommitResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Menyimpan perubahan jadwal dengan jujur. Salinan di perangkat langsung diperbarui supaya
+ * layar terasa cepat; bila tersambung (elderId ada), perubahan dikirim ke database dan
+ * DITUNGGU. Bila database menolak atau jaringan putus, salinan dikembalikan ke keadaan
+ * sebelumnya dan pesan galat dikembalikan, supaya layar tidak menampilkan "tersimpan"
+ * padahal caregiver masih melihat jadwal lama.
+ * Tanpa elderId (simulasi), perubahan hanya disimpan di perangkat.
+ * `save` bisa diganti untuk pengujian.
+ */
+export async function commitStoredReminders(
+  elderId: string | null,
+  previous: readonly StoredReminder[],
+  next: StoredReminder[],
+  save: (elderId: string, items: ReminderInput[]) => Promise<unknown> = saveReminders,
+): Promise<CommitResult> {
+  saveStoredReminders(next);
+  if (!elderId) return { ok: true };
+  try {
+    await save(
+      elderId,
+      next.map((r) => ({ label: r.label, time: r.time, enabled: r.enabled })),
+    );
+    return { ok: true };
+  } catch (e) {
+    saveStoredReminders([...previous]);
+    return { ok: false, message: errorMessage(e) };
   }
 }
 

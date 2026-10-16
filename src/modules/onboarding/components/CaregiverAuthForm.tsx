@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { ChevronLeftIcon } from "@/components/shared/Icons";
-import { signInCaregiver, signUpCaregiver } from "@/lib/auth/caregiver";
+import {
+  signInCaregiver,
+  signInCaregiverWithGoogle,
+  signUpCaregiver,
+} from "@/lib/auth/caregiver";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/errors";
 
@@ -48,6 +52,19 @@ export function CaregiverAuthForm({
     } catch (err) {
       setError(errorMessage(err));
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    if (!isSupabaseConfigured()) return;
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      await signInCaregiverWithGoogle();
+    } catch (err) {
+      setError(errorMessage(err));
       setBusy(false);
     }
   }
@@ -192,6 +209,26 @@ export function CaregiverAuthForm({
           >
             {busy ? "Memproses..." : isRegister ? "Daftar & Hubungkan Lansia" : "Masuk ke Dashboard"}
           </button>
+          {isSupabaseConfigured() && (
+            <>
+              <div className="flex items-center gap-3 text-xs font-bold text-ink-soft" aria-hidden="true">
+                <span className="h-px flex-1 bg-line/60" />
+                <span>atau</span>
+                <span className="h-px flex-1 bg-line/60" />
+              </div>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={busy}
+                className="w-full min-h-[56px] rounded-full border border-line/60 bg-surface text-ink text-base sm:text-lg font-bold hover:bg-paper focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus transition-all shadow-xs disabled:opacity-70 flex items-center justify-center gap-3"
+              >
+                <span aria-hidden="true" className="font-sans text-xl font-black text-[#4285F4]">
+                  G
+                </span>
+                {busy ? "Menghubungkan..." : "Lanjutkan dengan Google"}
+              </button>
+            </>
+          )}
         </div>
       </form>
     </div>

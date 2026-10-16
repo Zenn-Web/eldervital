@@ -39,7 +39,7 @@ export function getSupabase(role: Role): SupabaseClient {
       persistSession: true, 
       autoRefreshToken: true, 
       storageKey: `eldervital-auth-${role}`, 
-      detectSessionInUrl: false, },
+    detectSessionInUrl: true, },
   });
   return cached[role];
 }

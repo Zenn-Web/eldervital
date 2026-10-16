@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#F5EFE3"/>
+  <!-- Blue Arch -->
+  <path fill="#293A68" fill-rule="evenodd" clip-rule="evenodd" d="M 192 880 L 192 480 A 320 320 0 0 1 832 480 L 832 880 H 632 L 632 540 A 120 120 0 0 0 392 540 L 392 880 Z"/>
+  <!-- Terracotta Elder Figure -->
+  <circle cx="479" cy="704" r="44" fill="#C7643B"/>
+  <path fill="#C7643B" d="M 420 880 L 420 824 A 59 59 0 0 1 539 824 L 539 880 Z"/>
+  <!-- Brown Companion Figure -->
+  <circle cx="586" cy="769" r="29" fill="#923E1C"/>
+  <path fill="#923E1C" d="M 548 880 L 548 845 A 38 38 0 0 1 624 845 L 624 880 Z"/>
+</svg>

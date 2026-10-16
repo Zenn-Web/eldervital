@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { HandshakeIcon, ClockIcon, ChevronRightIcon } from "@/components/shared/Icons";
+import { HandshakeIcon, ClockIcon, ChevronRightIcon, PhoneIcon } from "@/components/shared/Icons";
 import { useElderSession } from "@/components/session/ElderSession";
 import { cancelHelpRequest, createHelpRequest, useHelpRequests } from "@/lib/help";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
@@ -86,9 +86,27 @@ function RequestHelpLive() {
         </div>
       </div>
 
-      <div className="p-3.5 bg-paper rounded-xl border border-line/60 text-xs sm:text-sm text-ink-soft">
-        <strong>Pemberitahuan:</strong> Aplikasi tidak bisa memastikan caregiver langsung melihat permintaan ini. Dalam
-        keadaan darurat, segera hubungi <strong>112</strong> atau <strong>119</strong>.
+      <div className="p-4 bg-paper rounded-2xl border border-line/60 space-y-2 text-xs sm:text-sm text-ink-soft">
+        <p>
+          <strong>Pemberitahuan:</strong> Aplikasi tidak bisa menjamin caregiver langsung membaca pesan.
+        </p>
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="font-bold text-ink">Bila keadaan darurat:</span>
+          <a
+            href="tel:119"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-alert-bg border border-alert-mark/40 text-alert-ink font-bold text-xs hover:bg-alert-bg/80 transition-colors"
+          >
+            <PhoneIcon size={12} />
+            <span>119 (Medis)</span>
+          </a>
+          <a
+            href="tel:112"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-paper border border-line text-ink font-bold text-xs hover:bg-surface transition-colors"
+          >
+            <PhoneIcon size={12} />
+            <span>112 (Darurat)</span>
+          </a>
+        </div>
       </div>
       {errorBox}
 
@@ -140,8 +158,27 @@ function RequestHelpDemo() {
         </div>
       </div>
 
-      <div className="p-3.5 bg-paper rounded-xl border border-line/60 text-xs sm:text-sm text-ink-soft">
-        <strong>Pemberitahuan:</strong> Aplikasi tidak bisa menjamin caregiver langsung membaca pesan. Dalam keadaan darurat, segera hubungi <strong>112</strong> atau <strong>119</strong>.
+      <div className="p-4 bg-paper rounded-2xl border border-line/60 space-y-2 text-xs sm:text-sm text-ink-soft">
+        <p>
+          <strong>Pemberitahuan:</strong> Aplikasi tidak bisa menjamin caregiver langsung membaca pesan.
+        </p>
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="font-bold text-ink">Bila keadaan darurat:</span>
+          <a
+            href="tel:119"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-alert-bg border border-alert-mark/40 text-alert-ink font-bold text-xs hover:bg-alert-bg/80 transition-colors"
+          >
+            <PhoneIcon size={12} />
+            <span>119 (Medis)</span>
+          </a>
+          <a
+            href="tel:112"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-paper border border-line text-ink font-bold text-xs hover:bg-surface transition-colors"
+          >
+            <PhoneIcon size={12} />
+            <span>112 (Darurat)</span>
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2.5 pt-2">

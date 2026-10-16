@@ -56,7 +56,7 @@ export default function ElderLinksCard() {
       </div>
       <Link
         href={configured ? "/lansia/hubungkan" : "/"}
-        className="min-h-[44px] flex items-center text-sm font-bold text-primary hover:text-primary-strong underline underline-offset-4 focus-visible:ring-4 focus-visible:ring-focus rounded shrink-0"
+        className="min-h-[44px] px-4 py-2 rounded-full border border-primary/30 bg-paper hover:bg-primary hover:text-white text-primary text-sm font-bold transition-colors flex items-center justify-center shrink-0 focus-visible:ring-4 focus-visible:ring-focus"
       >
         {pending ? "Lihat permintaan" : active.length > 0 ? "Atur" : "Lihat QR"}
       </Link>

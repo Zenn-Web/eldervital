@@ -47,7 +47,7 @@ function TimePickerModal({
   onSave,
   initialTime = "07.00",
   title = "Pilih Waktu",
-  subtitle = "Atur jam pengingat pemeriksaan harian",
+  subtitle = "Atur jam pengingat harian",
   presets = ["06.30", "07.00", "07.30", "08.00"],
 }: TimePickerProps) {
   const [hour, setHour] = useState(() => parseTimeToParts(initialTime).hour);
@@ -65,14 +65,20 @@ function TimePickerModal({
   };
 
   const handleSave = () => {
-    // Standard format for app is "HH.MM"
+    // Format standar aplikasi adalah "HH.MM"
     const formatted = `${pad2(hour)}.${pad2(minute)}`;
     onSave(formatted);
     onClose();
   };
 
   const period = getTimePeriodLabel(hour);
-  const formattedDisplay = `${pad2(hour)}:${pad2(minute)}`;
+  const formattedDisplay = `${pad2(hour)}.${pad2(minute)}`;
+
+  // Tentukan jumlah kolom grid preset yang simetris (4 kolom untuk 4 item, 3 kolom untuk 3/6 item)
+  const gridColsClass =
+    presets.length === 3 || presets.length === 6
+      ? "grid-cols-3"
+      : "grid-cols-4";
 
   return (
     <div
@@ -81,125 +87,105 @@ function TimePickerModal({
       aria-labelledby="time-picker-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none animate-in fade-in duration-150"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-line/60 bg-surface p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
-        {/* Header */}
+      <div className="w-full max-w-sm rounded-3xl border border-line/60 bg-surface p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+        {/* Header Modal */}
         <div className="flex items-start justify-between gap-3 border-b border-line/60 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <ClockIcon size={18} />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <ClockIcon size={20} />
             </div>
             <div>
-              <h2 id="time-picker-title" className="text-lg font-bold text-ink font-serif leading-tight">
+              <h2 id="time-picker-title" className="text-lg sm:text-xl font-bold text-ink font-serif leading-tight">
                 {title}
               </h2>
-              {subtitle && <p className="text-xs text-ink-soft">{subtitle}</p>}
+              {subtitle && <p className="text-xs text-ink-soft mt-0.5">{subtitle}</p>}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-paper hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-paper hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             aria-label="Tutup pemilih waktu"
           >
-            <CloseIcon size={16} />
+            <CloseIcon size={18} />
           </button>
         </div>
 
-        {/* Big Interactive Steppers */}
-        <div className="rounded-xl border border-line/60 bg-paper/60 p-4 flex flex-col items-center gap-3">
-          {/* Period Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface text-ink text-xs font-semibold border border-line/60 shadow-xs">
+        {/* Stepper Waktu yang Besar, Jelas & Ramah Sentuhan */}
+        <div className="rounded-2xl border border-line/60 bg-paper/60 p-4 sm:p-5 flex flex-col items-center gap-3.5">
+          {/* Badge Penanda Periode Hari (Pagi, Siang, Sore, Malam) */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface text-ink text-xs font-bold border border-line/70 shadow-2xs">
             <span>{period.icon}</span>
             <span>Waktu {period.label}</span>
           </div>
 
-          <div className="flex items-center justify-center gap-3 sm:gap-4 my-1">
-            {/* Hour Block */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4 my-0.5">
+            {/* Blok Jam */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
                 onClick={incrementHour}
-                className="flex h-11 w-14 items-center justify-center rounded-t-xl bg-surface hover:bg-paper border border-line/60 text-ink font-bold text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus transition-colors active:scale-95 shadow-xs"
+                className="flex h-11 w-16 items-center justify-center rounded-xl bg-surface hover:bg-paper border-2 border-line/70 text-ink font-bold text-xl focus-visible:outline-none transition-colors active:scale-95 shadow-2xs"
                 aria-label="Tambah 1 jam"
               >
                 +
               </button>
-              <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center bg-surface border-x border-line/60 font-mono text-3xl sm:text-4xl font-bold text-primary">
+              <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center font-mono text-4xl sm:text-5xl font-bold text-primary select-none">
                 {pad2(hour)}
               </div>
               <button
                 type="button"
                 onClick={decrementHour}
-                className="flex h-11 w-14 items-center justify-center rounded-b-xl bg-surface hover:bg-paper border border-line/60 text-ink font-bold text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus transition-colors active:scale-95 shadow-xs"
+                className="flex h-11 w-16 items-center justify-center rounded-xl bg-surface hover:bg-paper border-2 border-line/70 text-ink font-bold text-xl focus-visible:outline-none transition-colors active:scale-95 shadow-2xs"
                 aria-label="Kurangi 1 jam"
               >
                 &minus;
               </button>
-              <span className="text-[11px] font-semibold text-ink-soft uppercase tracking-wider mt-1.5">
-                Jam (00-23)
+              <span className="text-xs font-bold text-ink-soft mt-1.5 uppercase tracking-wide">
+                Jam
               </span>
             </div>
 
-            {/* Colon Separator */}
-            <div className="text-3xl sm:text-4xl font-bold text-ink-soft pb-6 font-mono select-none">
+            {/* Pemisah Titik Dua */}
+            <div className="text-4xl sm:text-5xl font-bold text-primary pb-6 font-mono select-none">
               :
             </div>
 
-            {/* Minute Block */}
+            {/* Blok Menit */}
             <div className="flex flex-col items-center">
               <button
                 type="button"
                 onClick={incrementMinute}
-                className="flex h-11 w-14 items-center justify-center rounded-t-xl bg-surface hover:bg-paper border border-line/60 text-ink font-bold text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus transition-colors active:scale-95 shadow-xs"
+                className="flex h-11 w-16 items-center justify-center rounded-xl bg-surface hover:bg-paper border-2 border-line/70 text-ink font-bold text-xl focus-visible:outline-none transition-colors active:scale-95 shadow-2xs"
                 aria-label="Tambah 5 menit"
               >
                 +
               </button>
-              <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center bg-surface border-x border-line/60 font-mono text-3xl sm:text-4xl font-bold text-primary">
+              <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center font-mono text-4xl sm:text-5xl font-bold text-primary select-none">
                 {pad2(minute)}
               </div>
               <button
                 type="button"
                 onClick={decrementMinute}
-                className="flex h-11 w-14 items-center justify-center rounded-b-xl bg-surface hover:bg-paper border border-line/60 text-ink font-bold text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus transition-colors active:scale-95 shadow-xs"
+                className="flex h-11 w-16 items-center justify-center rounded-xl bg-surface hover:bg-paper border-2 border-line/70 text-ink font-bold text-xl focus-visible:outline-none transition-colors active:scale-95 shadow-2xs"
                 aria-label="Kurangi 5 menit"
               >
                 &minus;
               </button>
-              <span className="text-[11px] font-semibold text-ink-soft uppercase tracking-wider mt-1.5">
-                Menit (00-59)
+              <span className="text-xs font-bold text-ink-soft mt-1.5 uppercase tracking-wide">
+                Menit
               </span>
             </div>
           </div>
-
-          {/* Native HTML Time Input for direct typing / accessibility */}
-          <div className="flex items-center gap-2 pt-1">
-            <label htmlFor="native-time-input" className="text-xs text-ink-soft">
-              Atau ketik langsung:
-            </label>
-            <input
-              id="native-time-input"
-              type="time"
-              value={`${pad2(hour)}:${pad2(minute)}`}
-              onChange={(e) => {
-                if (e.target.value) {
-                  const { hour: h, minute: m } = parseTimeToParts(e.target.value);
-                  setHour(h);
-                  setMinute(m);
-                }
-              }}
-              className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-mono font-semibold text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-focus"
-            />
-          </div>
         </div>
 
-        {/* Quick Presets */}
+        {/* Pilihan Cepat Waktu yang Simetris & Rapi */}
         {presets.length > 0 && (
-          <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-ink-soft block">
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-ink-soft block">
               Pilihan Cepat Waktu:
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className={`grid ${gridColsClass} gap-2`}>
               {presets.map((p) => {
                 const normP = p.replace(":", ".");
                 const isCurrent = `${pad2(hour)}.${pad2(minute)}` === normP;
@@ -208,10 +194,10 @@ function TimePickerModal({
                     key={p}
                     type="button"
                     onClick={() => applyPreset(p)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-mono font-medium transition-colors border min-h-[36px] ${
+                    className={`h-11 rounded-xl text-xs sm:text-sm font-mono font-bold transition-colors border-2 flex items-center justify-center cursor-pointer ${
                       isCurrent
-                        ? "bg-primary text-white border-primary font-bold shadow-xs"
-                        : "bg-surface hover:bg-paper border-line text-ink"
+                        ? "bg-primary text-white border-primary shadow-xs"
+                        : "bg-surface hover:bg-paper border-line/70 text-ink"
                     }`}
                   >
                     {normP}
@@ -222,14 +208,14 @@ function TimePickerModal({
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-line/60">
+        {/* Tombol Aksi Bawah yang Proporsional */}
+        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-line/60">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="rounded-full border-line/60 text-ink min-h-[44px] px-4 font-semibold"
+            className="w-full rounded-full border-2 border-line/80 text-ink min-h-[48px] font-bold text-sm hover:bg-paper transition-colors"
           >
             Batal
           </Button>
@@ -238,10 +224,10 @@ function TimePickerModal({
             variant="primary"
             size="sm"
             onClick={handleSave}
-            className="rounded-full bg-primary text-white font-bold min-h-[44px] px-5 gap-1.5 shadow-xs"
+            className="w-full rounded-full bg-primary hover:bg-primary-strong text-white font-bold min-h-[48px] text-sm gap-1.5 shadow-sm transition-colors flex items-center justify-center"
           >
             <CheckIcon size={16} />
-            <span>Simpan ({formattedDisplay} WIB)</span>
+            <span>Simpan ({formattedDisplay})</span>
           </Button>
         </div>
       </div>

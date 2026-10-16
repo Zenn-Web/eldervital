@@ -466,3 +466,232 @@ h1:focus {
   }
 }
 
+/* =========================================================================
+   Intro Splash Animation Keyframes & Utility Classes
+   ElderVital Brand Intro & Logo Motion
+   ========================================================================= */
+
+@keyframes arch-scale {
+  0% {
+    opacity: 0;
+    transform: scale(0.86) translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes figure-elder {
+  0% {
+    opacity: 0;
+    transform: translateY(42px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes figure-caregiver {
+  0% {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes doorway-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
+
+@keyframes wordmark-elder {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+    letter-spacing: -0.04em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: -0.01em;
+  }
+}
+
+@keyframes wordmark-vital {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+    letter-spacing: -0.04em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: -0.01em;
+  }
+}
+
+@keyframes tagline-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes intro-progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-arch-scale {
+  animation: arch-scale 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-figure-elder {
+  animation: figure-elder 650ms cubic-bezier(0.16, 1, 0.3, 1) 320ms forwards;
+  opacity: 0;
+}
+
+.animate-figure-caregiver {
+  animation: figure-caregiver 650ms cubic-bezier(0.16, 1, 0.3, 1) 480ms forwards;
+  opacity: 0;
+}
+
+.animate-doorway-pulse {
+  animation: doorway-pulse 1100ms ease-out forwards;
+}
+
+.animate-wordmark-elder {
+  animation: wordmark-elder 600ms cubic-bezier(0.16, 1, 0.3, 1) 700ms forwards;
+  opacity: 0;
+}
+
+.animate-wordmark-vital {
+  animation: wordmark-vital 600ms cubic-bezier(0.16, 1, 0.3, 1) 850ms forwards;
+  opacity: 0;
+}
+
+.animate-tagline-fade {
+  animation: tagline-fade 500ms ease-out 1100ms forwards;
+  opacity: 0;
+}
+
+.animate-intro-progress {
+  animation: intro-progress 1500ms ease-out forwards;
+}
+
+/* =========================================================================
+   1.5s Automatic Looping Animations for ElderVital Brand & Splash
+   ========================================================================= */
+
+@keyframes logo-loop-1500 {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.018);
+  }
+}
+
+@keyframes doorway-glow-loop-1500 {
+  0%, 100% {
+    opacity: 0.28;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes arch-breath-loop-1500 {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.012);
+  }
+}
+
+@keyframes figures-breath-loop-1500 {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3.5px);
+  }
+}
+
+@keyframes caregiver-breath-loop-1500 {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-logo-loop-1500 {
+  animation: logo-loop-1500 1500ms ease-in-out infinite;
+}
+
+.animate-doorway-glow-loop-1500 {
+  animation: doorway-glow-loop-1500 1500ms ease-in-out infinite;
+}
+
+.animate-arch-breath-loop-1500 {
+  animation: arch-breath-loop-1500 1500ms ease-in-out infinite;
+}
+
+.animate-figures-breath-loop-1500 {
+  animation: figures-breath-loop-1500 1500ms ease-in-out infinite;
+}
+
+.animate-caregiver-breath-loop-1500 {
+  animation: caregiver-breath-loop-1500 1500ms ease-in-out infinite 120ms;
+}
+
+/* Accessibility: Hormati prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-arch-scale,
+  .animate-figure-elder,
+  .animate-figure-caregiver,
+  .animate-doorway-pulse,
+  .animate-wordmark-elder,
+  .animate-wordmark-vital,
+  .animate-tagline-fade,
+  .animate-intro-progress,
+  .animate-logo-loop-1500,
+  .animate-doorway-glow-loop-1500,
+  .animate-arch-breath-loop-1500,
+  .animate-figures-breath-loop-1500,
+  .animate-caregiver-breath-loop-1500 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+

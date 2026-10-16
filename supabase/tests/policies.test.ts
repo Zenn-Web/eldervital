@@ -748,3 +748,184 @@ describe("migrasi aman dijalankan ulang (Supabase Preview)", () => {
     await db.query("update public.help_requests set status = 'cancelled' where id = $1", [req]); // transisi sah
   });
 });
+
+describe("uji keamanan dan validasi (kriteria penerimaan demo)", () => {
+  // Data uji sendiri, terpisah dari blok lain: lansia Bu Cici, caregiver Citra (akan
+  // dihubungkan), Dodi (orang asing, tidak pernah dihubungkan), dan dua akun kosong untuk
+  // menguji input tidak sah.
+  const U = {
+    elder: "00000000-0000-0000-0000-0000000000e3",
+    care: "00000000-0000-0000-0000-0000000000c3",
+    stranger: "00000000-0000-0000-0000-0000000000c4",
+    freshElder: "00000000-0000-0000-0000-0000000000e4",
+    freshCare: "00000000-0000-0000-0000-0000000000c5",
+  };
+  let elder: string;
+  let link: string;
+  const ans = (qs: { q: string; source?: string }[]) =>
+    JSON.stringify(
+      qs.map((x, i) => ({
+        position: i,
+        question_id: x.q,
+        value: "ya",
+        label: "Ya",
+        source: x.source ?? "lansia",
+        is_unknown: false,
+        answered_at: "2026-10-16T00:00:00Z",
+      })),
+    );
+  const save = (id: string, mode: string, status: string, result: string, answers = "[]") =>
+    db.query(
+      `select public.save_examination($1, $2, $3, 'gejala-dasar', '1.2.0-demo', now(), now(), $4, $5,
+         '[]', '[]', false, false, $6::jsonb)`,
+      [id, elder, mode, status, result, answers],
+    );
+
+  it("persiapan data uji", async () => {
+    await db.exec("reset role");
+    for (const id of Object.values(U)) await db.query("insert into auth.users (id) values ($1)", [id]);
+    await as(U.care);
+    await db.query("insert into public.caregivers (id, display_name) values ($1, 'Citra')", [U.care]);
+    await as(U.stranger);
+    await db.query("insert into public.caregivers (id, display_name) values ($1, 'Dodi')", [U.stranger]);
+    await as(U.elder, { anonymous: true });
+    elder = (await rows("select public.create_elder_profile('Bu Cici', '60-65') id"))[0].id as string;
+    expect(elder).toBeTruthy();
+  });
+
+  // ---------- Input tidak sah ----------
+
+  it("profil dengan nama kosong, nama terlalu panjang, atau usia tidak sah ditolak", async () => {
+    await as(U.freshElder, { anonymous: true });
+    await fails("select public.create_elder_profile('', null)");
+    await fails("select public.create_elder_profile($1, null)", ["x".repeat(61)]);
+    await fails("select public.create_elder_profile('Pak Uji', '30-40')");
+    await db.exec("reset role");
+    expect((await rows("select count(*)::int c from public.elders where device_user_id = $1", [U.freshElder]))[0].c).toBe(0);
+  });
+
+  it("nama caregiver kosong ditolak", async () => {
+    await as(U.freshCare);
+    await fails("insert into public.caregivers (id, display_name) values ($1, '')", [U.freshCare]);
+  });
+
+  it("pemeriksaan dengan status, hasil, mode, atau sumber jawaban tidak sah ditolak", async () => {
+    await as(U.elder, { anonymous: true });
+    // "completed"/"interrupted" adalah nilai yang dulu dikirim persistence.ts lama.
+    await expect(save("aaaaaaaa-0000-0000-0000-000000000001", "mandiri", "completed", "green")).rejects.toThrow();
+    await expect(save("aaaaaaaa-0000-0000-0000-000000000002", "mandiri", "interrupted", "red")).rejects.toThrow();
+    await expect(save("aaaaaaaa-0000-0000-0000-000000000003", "mandiri", "selesai", "blue")).rejects.toThrow();
+    await expect(save("aaaaaaaa-0000-0000-0000-000000000004", "darurat", "selesai", "green")).rejects.toThrow();
+    await expect(
+      save("aaaaaaaa-0000-0000-0000-000000000005", "mandiri", "selesai", "green", ans([{ q: "cough_today", source: "robot" }])),
+    ).rejects.toThrow();
+  });
+
+  it("jawaban ganda dalam satu pemeriksaan membatalkan seluruh penyimpanan (satu transaksi)", async () => {
+    await as(U.elder, { anonymous: true });
+    const id = "aaaaaaaa-0000-0000-0000-000000000006";
+    await expect(
+      save(id, "mandiri", "selesai", "green", ans([{ q: "cough_today" }, { q: "cough_today" }])),
+    ).rejects.toThrow();
+    await db.exec("reset role");
+    expect(await rows("select id from public.examinations where id = $1", [id])).toEqual([]);
+  });
+
+  // ---------- Pengiriman ganda ----------
+
+  it("kirim ulang dengan id sama tidak menggandakan dan tidak bisa menimpa isi yang tersimpan", async () => {
+    await as(U.elder, { anonymous: true });
+    const id = "aaaaaaaa-0000-0000-0000-000000000007";
+    await save(id, "mandiri", "selesai", "green", ans([{ q: "cough_today" }]));
+    // Percobaan "menimpa" lewat pengiriman ulang: hasil merah dengan dua jawaban.
+    await save(id, "mandiri", "terhenti", "red", ans([{ q: "cough_today" }, { q: "cough_blood" }]));
+    await db.exec("reset role");
+    expect(await rows("select status, result_status from public.examinations where id = $1", [id])).toEqual([
+      { status: "selesai", result_status: "green" },
+    ]);
+    expect((await rows("select count(*)::int c from public.exam_answers where examination_id = $1", [id]))[0].c).toBe(1);
+  });
+
+  // ---------- Akses tidak sah ----------
+
+  it("orang asing tidak bisa memutuskan, mengubah izin, atau memutus hubungan orang lain", async () => {
+    await as(U.elder, { anonymous: true });
+    const token = (await rows("select public.create_pairing_token() t"))[0].t as string;
+    await as(U.care);
+    link = (await rows("select public.request_pairing($1) id", [token]))[0].id as string;
+    await as(U.stranger);
+    await fails("select public.decide_link($1, true, true)", [link]);
+    await fails("select public.set_share_results($1, true)", [link]);
+    await fails("select public.revoke_link($1)", [link]);
+    expect(await rows("select * from public.care_links")).toEqual([]); // tidak melihat hubungan orang lain
+  });
+
+  it("caregiver tidak bisa memberi dirinya sendiri izin berbagi hasil", async () => {
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.decide_link($1, true, false)", [link]);
+    await as(U.care);
+    await fails("select public.set_share_results($1, true)", [link]);
+    await fails("update public.care_links set share_results = true where id = $1", [link]);
+    await db.exec("reset role");
+    expect((await rows("select share_results from public.care_links where id = $1", [link]))[0].share_results).toBe(false);
+  });
+
+  // ---------- Izin berbagi: sebelum dan sesudah perubahan ----------
+
+  it("izin berbagi: mati -> tidak terlihat, hidup -> terlihat, mati lagi -> tertutup lagi", async () => {
+    const visible = async () => {
+      await as(U.care);
+      return (await rows("select count(*)::int c from public.examinations where elder_id = $1 and mode = 'mandiri'", [elder]))[0].c;
+    };
+    expect(await visible()).toBe(0); // terhubung aktif, izin mati
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.set_share_results($1, true)", [link]);
+    expect(await visible()).toBe(1); // satu Cek Mandiri yang tersimpan di atas
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.set_share_results($1, false)", [link]);
+    expect(await visible()).toBe(0);
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.set_share_results($1, true)", [link]);
+    expect(await visible()).toBe(1);
+  });
+
+  // ---------- Putus hubungan ----------
+
+  it("caregiver memutus hubungan: semua akses tertutup, termasuk simpan, jadwal, dan bantuan", async () => {
+    await as(U.elder, { anonymous: true });
+    await db.query("insert into public.reminder_schedules (elder_id, label, time_of_day) values ($1, 'Pagi', '07:00')", [elder]);
+    await db.query("insert into public.help_requests (elder_id) values ($1)", [elder]);
+    await as(U.care);
+    expect((await rows("select count(*)::int c from public.reminder_schedules"))[0].c).toBe(1); // sebelum putus
+    await db.query("select public.revoke_link($1)", [link]);
+    expect(await rows("select * from public.elders")).toEqual([]);
+    expect(await rows("select * from public.examinations where mode = 'mandiri'")).toEqual([]);
+    expect(await rows("select * from public.reminder_schedules")).toEqual([]);
+    expect(await rows("select * from public.help_requests")).toEqual([]);
+    await expect(
+      db.query(
+        `select public.save_examination('aaaaaaaa-0000-0000-0000-000000000008', $1, 'caregiver', 't', '1', now(), now(),
+           'selesai', 'green', '[]', '[]', false, false, '[]')`,
+        [elder],
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("token lama tidak bisa dipakai lagi; sambung ulang mulai dari pending tanpa izin berbagi lama", async () => {
+    await as(U.elder, { anonymous: true });
+    const token = (await rows("select public.create_pairing_token() t"))[0].t as string;
+    await as(U.care);
+    const again = (await rows("select public.request_pairing($1) id", [token]))[0].id as string;
+    await fails("select public.request_pairing($1)", [token]); // sekali pakai
+    await db.exec("reset role");
+    expect((await rows("select status, share_results from public.care_links where id = $1", [again]))[0]).toEqual({
+      status: "pending",
+      share_results: false, // izin lama (true) tidak ikut kembali
+    });
+    // Penjamin utamanya ada di database, bukan di satu fungsi: izin berbagi hanya boleh menyala
+    // bila hubungan aktif (CHECK di care_links), dan revoke_link mematikannya saat memutus.
+    await fails("update public.care_links set share_results = true where id = $1", [again]);
+    await as(U.care);
+    expect(await rows("select * from public.examinations where mode = 'mandiri'")).toEqual([]);
+  });
+});

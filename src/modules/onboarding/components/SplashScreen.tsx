@@ -114,7 +114,7 @@ export function SplashScreen({ onStart }: SplashScreenProps) {
         </Button>
 
         <p className="text-xs text-center text-ink-soft font-medium pt-1">
-          ElderVital &bull; Aman &amp; Ramah Lansia
+          ElderVital &bull; Skrining Gejala Ramah Lansia
         </p>
 
        

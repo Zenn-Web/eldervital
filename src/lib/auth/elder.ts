@@ -1,6 +1,7 @@
 import { getSupabase } from "@/lib/supabase/client";
 import { isNetworkError } from "@/lib/supabase/errors";
 import { clearOutbox } from "@/lib/exam/outbox";
+import { clearStoredReminders } from "@/lib/reminders";
 
 /** Harus sama dengan CHECK age_range di supabase/migrations/0001_init.sql. */
 export type AgeRange = "50-54" | "55-59" | "60-65" | "lebih-65";
@@ -148,5 +149,7 @@ export async function deleteElderProfile(profile: ElderProfile): Promise<void> {
   writeCache(null);
   // Antrean penyimpanan milik profil ini tidak akan pernah bisa terkirim lagi.
   clearOutbox("lansia");
+  // Salinan jadwal di perangkat milik profil ini; profil baru akan mengambil jadwalnya sendiri.
+  clearStoredReminders();
   await supabase.auth.signOut({ scope: "local" });
 }

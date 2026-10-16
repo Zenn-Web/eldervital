@@ -18,8 +18,7 @@ import {
 } from "@/lib/auth/elder";
 import {
   getStoredReminders,
-  saveStoredReminders,
-  saveReminders,
+  commitStoredReminders,
   type StoredReminder,
 } from "@/lib/reminders";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -126,6 +125,16 @@ export default function ElderSettings() {
   const reminders: StoredReminder[] = JSON.parse(rawReminders);
   const [editingReminder, setEditingReminder] = useState<StoredReminder | null>(null);
   const [scheduleToast, setScheduleToast] = useState<string | null>(null);
+  const [scheduleToastKind, setScheduleToastKind] = useState<"ok" | "error">("ok");
+
+  /** Simpan perubahan jadwal dan tampilkan hasil yang sebenarnya (berhasil atau dibatalkan). */
+  async function commitSchedule(updated: StoredReminder[], okText: string | null) {
+    const res = await commitStoredReminders(profile?.id ?? null, reminders, updated);
+    if (res.ok && !okText) return;
+    setScheduleToastKind(res.ok ? "ok" : "error");
+    setScheduleToast(res.ok ? okText : `Jadwal belum tersimpan, jadi tidak diubah. ${res.message}`);
+    setTimeout(() => setScheduleToast(null), res.ok ? 3000 : 6000);
+  }
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -160,18 +169,8 @@ export default function ElderSettings() {
     const updated = reminders.map((r) =>
       r.id === id ? { ...r, enabled: !r.enabled } : r,
     );
-    saveStoredReminders(updated);
-
-    if (profile) {
-      saveReminders(
-        profile.id,
-        updated.map((u) => ({
-          label: u.label,
-          time: u.time,
-          enabled: u.enabled,
-        })),
-      ).catch(() => {});
-    }
+    // Berhasil: sakelar sudah berubah, tidak perlu pesan. Gagal: sakelar kembali dan pesan tampil.
+    commitSchedule(updated, null);
   }
 
   function handleSaveReminderTime(newTime: string) {
@@ -180,23 +179,9 @@ export default function ElderSettings() {
     const updated = reminders.map((r) =>
       r.id === editingReminder.id ? { ...r, time: newTime, enabled: true } : r,
     );
-    saveStoredReminders(updated);
-
-    if (profile) {
-      saveReminders(
-        profile.id,
-        updated.map((u) => ({
-          label: u.label,
-          time: u.time,
-          enabled: u.enabled,
-        })),
-      ).catch(() => {});
-    }
-
     const label = editingReminder.label;
     setEditingReminder(null);
-    setScheduleToast(`Jadwal ${label} diubah ke ${newTime}`);
-    setTimeout(() => setScheduleToast(null), 3000);
+    commitSchedule(updated, `Jadwal ${label} diubah ke ${newTime}`);
   }
 
   async function remove() {
@@ -260,9 +245,13 @@ export default function ElderSettings() {
           <div
             role="status"
             aria-live="polite"
-            className="px-4 py-2.5 bg-ok-bg text-ok-ink text-sm font-bold flex items-center gap-2 rounded-xl border border-ok-mark/30 animate-in fade-in duration-200"
+            className={`px-4 py-2.5 text-sm font-bold flex items-center gap-2 rounded-xl border animate-in fade-in duration-200 ${
+              scheduleToastKind === "ok"
+                ? "bg-ok-bg text-ok-ink border-ok-mark/30"
+                : "bg-alert-bg text-alert-ink border-alert-mark/30"
+            }`}
           >
-            <CheckIcon size={16} className="text-ok-mark shrink-0" />
+            {scheduleToastKind === "ok" && <CheckIcon size={16} className="text-ok-mark shrink-0" />}
             <span>{scheduleToast}</span>
           </div>
         )}

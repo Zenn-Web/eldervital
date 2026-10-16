@@ -11,7 +11,7 @@ import { CaregiverPairing } from "./components/CaregiverPairing";
 import { ScheduleSetup } from "./components/ScheduleSetup";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import { loadElderProfile } from "@/lib/auth/elder";
-import { saveReminders } from "@/lib/reminders";
+import { saveReminders, saveStoredReminders } from "@/lib/reminders";
 import { errorMessage } from "@/lib/supabase/errors";
 
 /**
@@ -48,10 +48,20 @@ export function OnboardingFlow() {
 
   /** Simpan jadwal ke reminder_schedules (bila tersambung), lalu ke beranda lansia. */
   async function finishSchedule(items: { label: string; time: string; enabled: boolean }[]) {
+    // Simpan ke local storage agar tersimpan di demo maupun produksi
+    const stored = items.map((it) => ({
+      id: it.label.toLowerCase(),
+      label: it.label,
+      time: it.time,
+      enabled: it.enabled,
+    }));
+    saveStoredReminders(stored);
+
     if (!isSupabaseConfigured()) {
       router.push("/lansia");
       return;
     }
+
     setScheduleSaving(true);
     setScheduleError(null);
     try {

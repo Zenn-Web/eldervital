@@ -30,6 +30,47 @@ export interface ReminderInput {
   enabled: boolean;
 }
 
+export const LOCAL_STORAGE_REMINDERS_KEY = "eldervital_reminder_schedules";
+
+export interface StoredReminder {
+  id: string;
+  label: string;
+  time: string; // "07.00"
+  enabled: boolean;
+}
+
+export const INITIAL_STORED_REMINDERS: StoredReminder[] = [
+  { id: "pagi", label: "Pagi", time: "07.00", enabled: true },
+  { id: "siang", label: "Siang", time: "12.30", enabled: true },
+  { id: "malam", label: "Malam", time: "19.00", enabled: true },
+];
+
+export function getStoredReminders(): StoredReminder[] {
+  if (typeof window === "undefined") return INITIAL_STORED_REMINDERS;
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_REMINDERS_KEY);
+    if (!raw) return INITIAL_STORED_REMINDERS;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch {
+    // fallback
+  }
+  return INITIAL_STORED_REMINDERS;
+}
+
+export function saveStoredReminders(items: StoredReminder[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_REMINDERS_KEY, JSON.stringify(items));
+    window.dispatchEvent(new Event("eldervital:reminders-updated"));
+  } catch {
+    // ignore
+  }
+}
+
+
 // ---------- Fungsi murni (jam) ----------
 
 /** "7.00", "07:00", "07.00", "07:00:00" -> "07:00". null bila bukan jam yang sah. */

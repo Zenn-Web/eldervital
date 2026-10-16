@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeftIcon } from "@/components/shared/Icons";
+import { ChevronLeftIcon, CheckIcon } from "@/components/shared/Icons";
 import { AGE_RANGES, createElderProfile, type AgeRange } from "@/lib/auth/elder";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/supabase/errors";
@@ -87,10 +87,10 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
                 role="radio"
                 aria-checked={salutation === "Bapak"}
                 onClick={() => setSalutation("Bapak")}
-                className={`flex-1 min-h-[48px] rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer ${
+                className={`flex-1 min-h-[48px] rounded-full font-bold text-base border-2 transition-colors focus-visible:outline-none cursor-pointer ${
                   salutation === "Bapak"
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-surface border border-line/70 text-ink hover:bg-paper/70"
+                    ? "bg-primary border-primary text-white shadow-xs"
+                    : "bg-surface border-line/80 text-ink hover:bg-paper hover:border-line"
                 }`}
               >
                 Bapak
@@ -100,10 +100,10 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
                 role="radio"
                 aria-checked={salutation === "Ibu"}
                 onClick={() => setSalutation("Ibu")}
-                className={`flex-1 min-h-[48px] rounded-full font-bold text-base transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-focus cursor-pointer ${
+                className={`flex-1 min-h-[48px] rounded-full font-bold text-base border-2 transition-colors focus-visible:outline-none cursor-pointer ${
                   salutation === "Ibu"
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-surface border border-line/70 text-ink hover:bg-paper/70"
+                    ? "bg-primary border-primary text-white shadow-xs"
+                    : "bg-surface border-line/80 text-ink hover:bg-paper hover:border-line"
                 }`}
               >
                 Ibu
@@ -134,24 +134,75 @@ export function ElderProfileForm({ onSaved, onBack }: ElderProfileFormProps) {
             </p>
           </div>
 
-          {/* Rentang Usia (opsional) */}
-          <div className="space-y-1.5 pt-1">
-            <label htmlFor="elder-age" className="block text-sm sm:text-base font-bold text-ink">
-              Usia (boleh dilewati)
-            </label>
-            <select
-              id="elder-age"
-              value={ageRange}
-              onChange={(e) => setAgeRange(e.target.value as AgeRange | "")}
-              className="w-full min-h-[52px] px-4 py-3 text-base sm:text-lg font-medium rounded-xl border border-line/80 bg-surface text-ink focus:border-primary focus:outline-none focus:ring-4 focus:ring-focus shadow-xs"
+          {/* Rentang Usia (Pilihan Kartu Angka yang Rapi & Proporsional) */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm sm:text-base font-bold text-ink">
+                Rentang usia <span className="text-xs sm:text-sm font-normal text-ink-soft">(boleh dilewati)</span>
+              </label>
+              {ageRange && (
+                <button
+                  type="button"
+                  onClick={() => setAgeRange("")}
+                  className="text-xs font-semibold text-primary hover:underline transition-colors focus-visible:outline-none"
+                >
+                  ✕ Batal pilih
+                </button>
+              )}
+            </div>
+
+            <div
+              className="grid grid-cols-2 gap-2.5"
+              role="radiogroup"
+              aria-label="Pilih rentang usia lansia"
             >
-              <option value="">Tidak diisi</option>
-              {AGE_RANGES.map((a) => (
-                <option key={a.value} value={a.value}>
-                  {a.label}
-                </option>
-              ))}
-            </select>
+              {[
+                { value: "50-54" as AgeRange, range: "50 – 54", unit: "tahun", fullLabel: "50 sampai 54 tahun" },
+                { value: "55-59" as AgeRange, range: "55 – 59", unit: "tahun", fullLabel: "55 sampai 59 tahun" },
+                { value: "60-65" as AgeRange, range: "60 – 65", unit: "tahun", fullLabel: "60 sampai 65 tahun" },
+                { value: "lebih-65" as AgeRange, range: "> 65", unit: "tahun", fullLabel: "Lebih dari 65 tahun" },
+              ].map((item) => {
+                const isSelected = ageRange === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={item.fullLabel}
+                    onClick={() => setAgeRange(isSelected ? "" : item.value)}
+                    className={`relative border-2 h-[68px] rounded-2xl transition-colors flex flex-col items-center justify-center cursor-pointer select-none focus-visible:outline-none ${
+                      isSelected
+                        ? "bg-primary border-primary text-white shadow-xs"
+                        : "bg-surface border-line/80 text-ink hover:bg-paper hover:border-line active:bg-paper/80"
+                    }`}
+                  >
+                    {/* Indikator centang di pojok kanan atas yang tidak menggeser posisi teks */}
+                    {isSelected && (
+                      <span className="absolute top-2 right-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-white">
+                        <CheckIcon size={12} strokeWidth={2.5} />
+                      </span>
+                    )}
+                    <span className="text-lg font-bold tracking-tight leading-tight">
+                      {item.range}
+                    </span>
+                    <span
+                      className={`text-xs font-medium mt-0.5 ${
+                        isSelected ? "text-white/85" : "text-ink-soft"
+                      }`}
+                    >
+                      {item.unit}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-ink-soft">
+              {ageRange
+                ? `Pilihan aktif: ${AGE_RANGES.find((a) => a.value === ageRange)?.label}`
+                : "Opsional. Membantu penyesuaian saran pemantauan kesehatan lansia."}
+            </p>
           </div>
 
           <p className="text-xs sm:text-sm text-ink-soft">

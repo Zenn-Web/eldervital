@@ -1,5 +1,5 @@
 // Uji ujung ke ujung ElderVital ke Supabase ASLI, memakai kunci publik seperti aplikasi:
-// Auth (email + anonim), API, RLS, RPC, Realtime, dan trigger 0002.
+// Auth (email + anonim), API, RLS, RPC, Realtime, trigger 0002, dan pengetatan 0003.
 //
 //   npm run smoke:e2e        (membaca .env.local)
 //
@@ -98,9 +98,21 @@ try {
   };
   const sv = await E.rpc("save_examination", args);
   check("lansia menyimpan pemeriksaan (berlabel simulasi)", sv.data === examId, sv.error?.message);
-  const sv2 = await E.rpc("save_examination", { ...args, p_result_status: "green", p_status: "selesai" });
+  // Kirim ulang dengan isi berbeda tetapi SAH (selesai, data tidak cukup, tanpa alasan): diterima
+  // tanpa galat, tetapi isi yang sudah tersimpan tidak berubah.
+  const sv2 = await E.rpc("save_examination", {
+    ...args, p_status: "selesai", p_result_status: "insufficient", p_reasons: [], p_actions: [], p_interrupted: false,
+  });
   const mine = await E.from("examinations").select("result_status, is_simulated").eq("id", examId);
-  check("kirim ulang tidak menggandakan dan tidak menimpa", !sv2.error && mine.data?.length === 1 && mine.data[0].result_status === "red" && mine.data[0].is_simulated === true);
+  check(
+    "kirim ulang tidak menggandakan dan tidak menimpa",
+    !sv2.error && mine.data?.length === 1 && mine.data[0].result_status === "red" && mine.data[0].is_simulated === true,
+    sv2.error?.message ?? `${mine.data?.length} baris, hasil ${mine.data?.[0]?.result_status}`,
+  );
+  const forged = await E.rpc("save_examination", {
+    ...args, p_id: randomUUID(), p_status: "selesai", p_result_status: "green", p_interrupted: false,
+  });
+  check("hasil hijau dengan alasan merah ditolak (0003)", !!forged.error, forged.error?.message);
   const invalid = await E.rpc("save_examination", { ...args, p_id: randomUUID(), p_status: "completed" });
   check("status tidak sah ditolak database", !!invalid.error, invalid.error?.code);
 
@@ -117,11 +129,22 @@ try {
   let gotEvent = false;
   realtimeChannel = C.channel("uji-help-" + randomUUID())
     .on("postgres_changes", { event: "*", schema: "public", table: "help_requests" }, () => { gotEvent = true; });
-  await new Promise((resolve) => realtimeChannel.subscribe((st) => { if (st === "SUBSCRIBED" || st === "CHANNEL_ERROR" || st === "TIMED_OUT") resolve(st); }));
+  const subStatus = await new Promise((resolve) => {
+    const timer = setTimeout(() => resolve("tidak ada jawaban dalam 15 detik"), 15000);
+    realtimeChannel.subscribe((st, err) => {
+      if (st === "SUBSCRIBED" || st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") {
+        clearTimeout(timer);
+        resolve(err ? `${st}: ${err.message}` : st);
+      }
+    });
+  });
+  check("caregiver berlangganan Realtime", subStatus === "SUBSCRIBED", subStatus);
+  // Server Realtime butuh sesaat setelah SUBSCRIBED sebelum perubahan pertama terkirim.
+  await sleep(2000);
   const hr = await E.from("help_requests").insert({ elder_id: elderId }).select("id").single();
   check("lansia membuat permintaan bantuan", !hr.error, hr.error?.message);
-  for (let i = 0; i < 20 && !gotEvent; i++) await sleep(500);
-  check("caregiver menerima event Realtime", gotEvent, gotEvent ? "" : "tidak ada event dalam 10 detik");
+  for (let i = 0; i < 30 && !gotEvent; i++) await sleep(500);
+  check("caregiver menerima event Realtime", gotEvent, gotEvent ? "" : "tidak ada event dalam 15 detik");
   const take1 = await C.from("help_requests").update({ status: "taken", taken_by: cid }).eq("id", hr.data.id).eq("status", "open").select("id");
   const take2 = await C.from("help_requests").update({ status: "taken", taken_by: cid }).eq("id", hr.data.id).eq("status", "open").select("id");
   check("menanggapi: hanya sekali berhasil", take1.data?.length === 1 && take2.data?.length === 0, take1.error?.message);
@@ -137,6 +160,21 @@ try {
   const cgEdit = await C.from("reminder_schedules").update({ enabled: false }).eq("elder_id", elderId).select("id");
   check("caregiver bisa membaca jadwal tapi tidak mengubah", cgRem.data?.length === 1 && (cgEdit.data ?? []).length === 0);
 
+  // ---------- Catatan mode caregiver (0003) ----------
+  const cgArgs = {
+    ...args,
+    p_id: randomUUID(),
+    p_mode: "caregiver",
+    p_answers: args.p_answers.map((a) => ({ ...a, source: "caregiver" })),
+  };
+  const cgOwn = await C.rpc("save_examination", cgArgs);
+  const cgRead = await C.from("examinations").select("id, exam_answers(id)").eq("id", cgArgs.p_id);
+  check(
+    "caregiver mencatat pemeriksaan mode caregiver dan membacanya selama terhubung",
+    !cgOwn.error && cgRead.data?.length === 1 && cgRead.data[0].exam_answers.length === 2,
+    cgOwn.error?.message ?? cgRead.error?.message,
+  );
+
   // ---------- Putus hubungan ----------
   const rv = await C.rpc("revoke_link", { p_link_id: linkId });
   check("caregiver memutus hubungan", !rv.error, rv.error?.message);
@@ -146,8 +184,18 @@ try {
     C.from("help_requests").select("id").eq("elder_id", elderId),
   ]);
   check("setelah putus: profil, jadwal, dan bantuan tertutup", after.every((r) => (r.data ?? []).length === 0));
-  const cgSave = await C.rpc("save_examination", { ...args, p_id: randomUUID(), p_mode: "caregiver" });
-  check("setelah putus: caregiver tidak bisa menyimpan pemeriksaan", !!cgSave.error, cgSave.error?.code);
+  const [ownAfter, answersAfter] = await Promise.all([
+    C.from("examinations").select("id").eq("id", cgArgs.p_id),
+    C.from("exam_answers").select("id").eq("examination_id", cgArgs.p_id),
+  ]);
+  check(
+    "setelah putus: catatan mode caregiver miliknya sendiri juga tertutup (0003)",
+    (ownAfter.data ?? []).length === 0 && (answersAfter.data ?? []).length === 0,
+    `${ownAfter.data?.length ?? "?"} pemeriksaan, ${answersAfter.data?.length ?? "?"} jawaban terlihat`,
+  );
+  // Payload sah (sumber jawaban caregiver), jadi yang menolak adalah RLS (42501), bukan validasi.
+  const cgSave = await C.rpc("save_examination", { ...cgArgs, p_id: randomUUID() });
+  check("setelah putus: caregiver tidak bisa menyimpan pemeriksaan", cgSave.error?.code === "42501", cgSave.error?.code);
 } catch (e) {
   console.log("BERHENTI:", e.message);
 } finally {

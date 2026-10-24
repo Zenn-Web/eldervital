@@ -42,9 +42,19 @@ async function rows(sql: string, params: unknown[] = []) {
   return (await db.query(sql, params)).rows as Record<string, unknown>[];
 }
 
-async function fails(sql: string, params: unknown[] = []) {
-  await expect(db.query(sql, params)).rejects.toThrow();
+async function fails(sql: string, params: unknown[] = [], reason?: RegExp) {
+  await expect(db.query(sql, params)).rejects.toThrow(reason);
 }
+
+/** Ditolak oleh kebijakan RLS (bukan oleh validasi payload), supaya tes akses tidak lolos karena alasan lain. */
+const RLS = /row-level security/;
+
+/** Satu jawaban sah untuk save_examination; sumber harus sesuai mode (migrasi 0003). */
+const oneAnswer = (source: "lansia" | "caregiver") =>
+  JSON.stringify([
+    { position: 0, question_id: "cough_today", value: "tidak", label: "Tidak", source,
+      is_unknown: false, answered_at: "2026-10-14T00:00:00Z" },
+  ]);
 
 beforeAll(async () => {
   db = new PGlite();
@@ -272,8 +282,8 @@ describe("persetujuan hubungan", () => {
     await db.query("select public.decide_link($1, true, false)", [id]);
     const elder = await elderIdOf(ids.elderA);
     await as(ids.elderA, { anonymous: true });
-    await db.query("select public.save_examination($1,$2,'mandiri','gejala-dasar','1.0.0-demo',now(),now(),'selesai','green','[]','[]',false,true,'[]')",
-      ["11111111-1111-1111-1111-111111111111", elder]);
+    await db.query("select public.save_examination($1,$2,'mandiri','gejala-dasar','1.0.0-demo',now(),now(),'selesai','green','[]','[]',false,true,$3::jsonb)",
+      ["11111111-1111-1111-1111-111111111111", elder, oneAnswer("lansia")]);
     await as(ids.careX);
     expect(await rows("select display_name from public.elders")).toEqual([{ display_name: "Ibu Ani" }]);
     expect(await rows("select * from public.examinations")).toEqual([]);
@@ -361,8 +371,9 @@ describe("pemeriksaan", () => {
     const other = await elderIdOf(ids.elderB);
     await as(ids.elderA, { anonymous: true });
     await fails(
-      "select public.save_examination($1,$2,'mandiri','t','1',now(),now(),'selesai','green','[]','[]',false,true,'[]')",
-      ["33333333-3333-3333-3333-333333333333", other],
+      "select public.save_examination($1,$2,'mandiri','gejala-dasar','1.2.0-demo',now(),now(),'selesai','green','[]','[]',false,true,$3::jsonb)",
+      ["33333333-3333-3333-3333-333333333333", other, oneAnswer("lansia")],
+      RLS,
     );
   });
 
@@ -377,8 +388,9 @@ describe("pemeriksaan", () => {
     const elder = await elderIdOf(ids.elderA);
     await as(ids.careX);
     await fails(
-      "select public.save_examination($1,$2,'caregiver','t','1',now(),now(),'selesai','green','[]','[]',false,true,'[]')",
-      ["44444444-4444-4444-4444-444444444444", elder],
+      "select public.save_examination($1,$2,'caregiver','gejala-dasar','1.2.0-demo',now(),now(),'selesai','green','[]','[]',false,true,$3::jsonb)",
+      ["44444444-4444-4444-4444-444444444444", elder, oneAnswer("caregiver")],
+      RLS,
     );
   });
 
@@ -387,8 +399,8 @@ describe("pemeriksaan", () => {
     const elder = await elderIdOf(ids.elderA);
     await as(ids.careX);
     await db.query(
-      "select public.save_examination($1,$2,'caregiver','t','1',now(),now(),'selesai','yellow','[]','[]',false,true,'[]')",
-      ["55555555-5555-5555-5555-555555555555", elder],
+      "select public.save_examination($1,$2,'caregiver','gejala-dasar','1.2.0-demo',now(),now(),'selesai','green','[]','[]',false,true,$3::jsonb)",
+      ["55555555-5555-5555-5555-555555555555", elder, oneAnswer("caregiver")],
     );
     const r = await rows("select mode, caregiver_id from public.examinations");
     expect(r).toEqual([{ mode: "caregiver", caregiver_id: ids.careX }]);
@@ -398,8 +410,9 @@ describe("pemeriksaan", () => {
     const elder = await elderIdOf(ids.elderA);
     await as(ids.careX);
     await fails(
-      "select public.save_examination($1,$2,'mandiri','t','1',now(),now(),'selesai','green','[]','[]',false,true,'[]')",
-      ["66666666-6666-6666-6666-666666666666", elder],
+      "select public.save_examination($1,$2,'mandiri','gejala-dasar','1.2.0-demo',now(),now(),'selesai','green','[]','[]',false,true,$3::jsonb)",
+      ["66666666-6666-6666-6666-666666666666", elder, oneAnswer("lansia")],
+      RLS,
     );
   });
 
@@ -838,7 +851,7 @@ describe("uji keamanan dan validasi (kriteria penerimaan demo)", () => {
     const id = "aaaaaaaa-0000-0000-0000-000000000007";
     await save(id, "mandiri", "selesai", "green", ans([{ q: "cough_today" }]));
     // Percobaan "menimpa" lewat pengiriman ulang: hasil merah dengan dua jawaban.
-    await save(id, "mandiri", "terhenti", "red", ans([{ q: "cough_today" }, { q: "cough_blood" }]));
+    await save(id, "mandiri", "selesai", "insufficient", ans([{ q: "cough_today" }, { q: "cough_blood" }]));
     await db.exec("reset role");
     expect(await rows("select status, result_status from public.examinations where id = $1", [id])).toEqual([
       { status: "selesai", result_status: "green" },
@@ -904,11 +917,11 @@ describe("uji keamanan dan validasi (kriteria penerimaan demo)", () => {
     expect(await rows("select * from public.help_requests")).toEqual([]);
     await expect(
       db.query(
-        `select public.save_examination('aaaaaaaa-0000-0000-0000-000000000008', $1, 'caregiver', 't', '1', now(), now(),
-           'selesai', 'green', '[]', '[]', false, false, '[]')`,
-        [elder],
+        `select public.save_examination('aaaaaaaa-0000-0000-0000-000000000008', $1, 'caregiver', 'gejala-dasar',
+           '1.2.0-demo', now(), now(), 'selesai', 'green', '[]', '[]', false, false, $2::jsonb)`,
+        [elder, oneAnswer("caregiver")],
       ),
-    ).rejects.toThrow();
+    ).rejects.toThrow(RLS);
   });
 
   it("token lama tidak bisa dipakai lagi; sambung ulang mulai dari pending tanpa izin berbagi lama", async () => {
@@ -927,5 +940,201 @@ describe("uji keamanan dan validasi (kriteria penerimaan demo)", () => {
     await fails("update public.care_links set share_results = true where id = $1", [again]);
     await as(U.care);
     expect(await rows("select * from public.examinations where mode = 'mandiri'")).toEqual([]);
+  });
+});
+
+describe("pengetatan keamanan (migrasi 0003)", () => {
+  const U = {
+    elder: "00000000-0000-0000-0000-0000000000f1",
+    care: "00000000-0000-0000-0000-0000000000f2",
+  };
+  let elder: string;
+  let link: string;
+  const exam = "bbbbbbbb-0000-0000-0000-000000000001";
+  const examShared = "bbbbbbbb-0000-0000-0000-000000000002";
+
+  const answer = (q: string, source = "lansia", extra: Record<string, unknown> = {}) => ({
+    position: 0, question_id: q, value: "ya", label: "Ya", source, is_unknown: false,
+    answered_at: "2026-10-16T00:00:00Z", ...extra,
+  });
+  const redReason = {
+    ruleId: "R-COUGH-BLOOD", level: "red", nodeId: "cough_blood",
+    question: "Apakah batuk Anda mengeluarkan darah?", answerLabel: "Ya", text: "Batuk disertai darah.",
+  };
+
+  /** Payload sah (Cek Mandiri, selesai, hijau) yang bisa diubah satu per satu. */
+  const base = (over: Record<string, unknown> = {}) => ({
+    p_id: "bbbbbbbb-0000-0000-0000-0000000000ff",
+    p_mode: "mandiri",
+    p_tree_id: "gejala-dasar",
+    p_tree_version: "1.2.0-demo",
+    p_started_at: "2026-10-16T00:00:00Z",
+    p_finished_at: "2026-10-16T00:05:00Z",
+    p_status: "selesai",
+    p_result_status: "green",
+    p_reasons: [] as unknown,
+    p_actions: [] as unknown,
+    p_interrupted: false,
+    p_is_simulated: false,
+    p_answers: [answer("cough_today")] as unknown,
+    ...over,
+  });
+  const JSONB = new Set(["p_reasons", "p_actions", "p_answers"]);
+  function save(payload: Record<string, unknown>) {
+    const args = { p_elder_id: elder, ...payload };
+    const keys = Object.keys(args);
+    const sql = `select public.save_examination(${keys
+      .map((k, i) => `${k} => $${i + 1}${JSONB.has(k) ? "::jsonb" : ""}`)
+      .join(", ")}) id`;
+    return db.query(
+      sql,
+      keys.map((k) => (JSONB.has(k) ? JSON.stringify(args[k as keyof typeof args]) : args[k as keyof typeof args])),
+    );
+  }
+  async function count(table: "examinations" | "exam_answers", id: string) {
+    await db.exec("reset role");
+    const col = table === "examinations" ? "id" : "examination_id";
+    return (await rows(`select count(*)::int c from public.${table} where ${col} = $1`, [id]))[0].c;
+  }
+
+  it("persiapan: lansia dan caregiver terhubung tanpa izin berbagi", async () => {
+    await db.exec("reset role");
+    for (const id of Object.values(U)) await db.query("insert into auth.users (id) values ($1)", [id]);
+    await as(U.care);
+    await db.query("insert into public.caregivers (id, display_name) values ($1, 'Eka')", [U.care]);
+    await as(U.elder, { anonymous: true });
+    elder = (await rows("select public.create_elder_profile('Bu Endah', '60-65') id"))[0].id as string;
+    link = (await pair(U.elder, U.care, true, false)).linkId;
+  });
+
+  // ---------- A01: putus hubungan menutup catatan caregiver sendiri ----------
+
+  it("caregiver mencatat pemeriksaan mode caregiver dan membacanya selama hubungan aktif", async () => {
+    await as(U.care);
+    await save(base({ p_id: exam, p_mode: "caregiver", p_answers: [answer("cough_today", "caregiver")] }));
+    expect(await rows("select id from public.examinations where id = $1", [exam])).toHaveLength(1);
+    expect(await rows("select id from public.exam_answers where examination_id = $1", [exam])).toHaveLength(1);
+  });
+
+  it("setelah lansia memutus hubungan: caregiver tidak bisa membaca pemeriksaan maupun jawabannya", async () => {
+    // Satu catatan lagi saat izin berbagi menyala, supaya kedua jalur akses lama ikut diuji.
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.set_share_results($1, true)", [link]);
+    await as(U.care);
+    await save(base({ p_id: examShared, p_mode: "caregiver", p_answers: [answer("cough_today", "caregiver")] }));
+
+    await as(U.elder, { anonymous: true });
+    await db.query("select public.revoke_link($1)", [link]);
+
+    await as(U.care);
+    expect(await rows("select id from public.examinations")).toEqual([]);
+    expect(await rows("select id from public.exam_answers")).toEqual([]);
+    expect(await rows("select public.can_view_examination($1) ok", [exam])).toEqual([{ ok: false }]);
+    // Lewat embed PostgREST (examinations -> exam_answers) juga tertutup: kebijakannya sama.
+    expect(
+      await rows("select a.id from public.exam_answers a join public.examinations x on x.id = a.examination_id"),
+    ).toEqual([]);
+    // Jawaban baru tidak bisa disisipkan ke catatan lama.
+    await fails(
+      `insert into public.exam_answers (examination_id, position, question_id, value, label, source, answered_at)
+       values ($1, 5, 'chest_check', 'tidak', 'Tidak', 'caregiver', now())`,
+      [exam],
+      RLS,
+    );
+  });
+
+  it("data tetap milik lansia: lansia masih melihat semua pemeriksaan dan jawabannya", async () => {
+    await as(U.elder, { anonymous: true });
+    expect((await rows("select count(*)::int c from public.examinations"))[0].c).toBe(2);
+    expect((await rows("select count(*)::int c from public.exam_answers"))[0].c).toBe(2);
+  });
+
+  it("sambung ulang yang masih pending tidak membuka catatan lama", async () => {
+    await as(U.elder, { anonymous: true });
+    const token = (await rows("select public.create_pairing_token() t"))[0].t as string;
+    await as(U.care);
+    await db.query("select public.request_pairing($1)", [token]);
+    expect(await rows("select id from public.examinations")).toEqual([]);
+    expect(await rows("select id from public.exam_answers")).toEqual([]);
+  });
+
+  // ---------- A04/A08: validasi payload save_examination ----------
+
+  const invalid: [string, Record<string, unknown>][] = [
+    ["jawaban lebih dari 30", { p_answers: Array.from({ length: 31 }, (_, i) => answer(`q_${i}`, "lansia", { position: i })) }],
+    ["isi jawaban lebih dari 200 huruf", { p_answers: [answer("cough_today", "lansia", { value: "x".repeat(201) })] }],
+    ["label jawaban kosong", { p_answers: [answer("cough_today", "lansia", { label: "" })] }],
+    ["question_id berisi karakter aneh", { p_answers: [answer("cough_today'; drop table x;--")] }],
+    ["jawaban bukan daftar", { p_answers: { position: 0 } }],
+    ["elemen jawaban bukan objek", { p_answers: ["ya"] }],
+    ["posisi jawaban berupa teks", { p_answers: [answer("cough_today", "lansia", { position: "0" })] }],
+    ["sumber caregiver pada Cek Mandiri", { p_answers: [answer("cough_today", "caregiver")] }],
+    ["alasan bukan daftar", { p_reasons: { level: "red" } }],
+    ["alasan lebih dari 20", { p_result_status: "insufficient", p_reasons: Array.from({ length: 21 }, () => ({ ...redReason, level: "yellow", nodeId: "cough_today" })) }],
+    ["alasan dengan teks lebih dari 500 huruf", { p_result_status: "yellow", p_reasons: [{ ...redReason, level: "yellow", nodeId: "cough_today", text: "x".repeat(501) }] }],
+    ["tindakan bukan teks", { p_actions: [{ x: 1 }] }],
+    ["tindakan lebih dari 10", { p_actions: Array.from({ length: 11 }, () => "Istirahat.") }],
+    ["pohon tidak dikenal", { p_tree_id: "pohon-palsu" }],
+    ["versi pohon tidak dikenal", { p_tree_version: "9.9.9" }],
+    ["status hasil kosong", { p_result_status: null }],
+    ["mode tidak sah", { p_mode: "admin" }],
+    ["waktu selesai sebelum mulai", { p_finished_at: "2026-10-15T00:00:00Z" }],
+    ["waktu mulai jauh di masa depan", { p_started_at: "2099-01-01T00:00:00Z", p_finished_at: "2099-01-01T00:05:00Z" }],
+    ["selesai tanpa jawaban", { p_answers: [] }],
+    ["hijau padahal ada alasan", { p_reasons: [{ ...redReason, level: "yellow", nodeId: "cough_today" }] }],
+    ["hijau padahal belum selesai", { p_status: "belum_selesai", p_finished_at: null }],
+    ["merah tanpa alasan merah", { p_result_status: "red", p_status: "terhenti", p_interrupted: true }],
+    ["terhenti tetapi bukan merah", { p_status: "terhenti", p_interrupted: true, p_result_status: "insufficient" }],
+    ["alasan menunjuk pertanyaan yang tidak dijawab", { p_result_status: "red", p_status: "terhenti", p_interrupted: true, p_reasons: [redReason] }],
+  ];
+
+  it.each(invalid)("ditolak dan tidak meninggalkan data: %s", async (_label, over) => {
+    await as(U.elder, { anonymous: true });
+    const id = newExamId();
+    await expect(save(base({ p_id: id, ...over }))).rejects.toThrow();
+    expect(await count("examinations", id)).toBe(0);
+    expect(await count("exam_answers", id)).toBe(0);
+  });
+
+  it("galat di tengah penyimpanan jawaban membatalkan pemeriksaannya juga", async () => {
+    await as(U.elder, { anonymous: true });
+    const id = newExamId();
+    // Lolos validasi bentuk, tetapi waktu jawaban bukan tanggal: gagal saat baris jawaban disisipkan.
+    await expect(
+      save(base({ p_id: id, p_answers: [answer("cough_today", "lansia", { answered_at: "bukan-tanggal" })] })),
+    ).rejects.toThrow();
+    expect(await count("examinations", id)).toBe(0);
+  });
+
+  it("payload sah tetap tersimpan: merah dengan alasan yang menunjuk ke jawabannya", async () => {
+    await as(U.elder, { anonymous: true });
+    const id = newExamId();
+    await save(
+      base({
+        p_id: id,
+        p_status: "terhenti",
+        p_interrupted: true,
+        p_result_status: "red",
+        p_reasons: [redReason],
+        p_actions: ["Hubungi 112 atau 119."],
+        p_answers: [answer("cough_today"), answer("cough_blood", "lansia", { position: 1 })],
+      }),
+    );
+    expect(await count("examinations", id)).toBe(1);
+    expect(await count("exam_answers", id)).toBe(2);
+  });
+
+  it("versi pohon yang dipakai aplikasi sekarang dikenal database", async () => {
+    await as(U.elder, { anonymous: true });
+    const id = newExamId();
+    await save(base({ p_id: id, p_tree_id: treeV1.id, p_tree_version: treeV1.version }));
+    expect(await count("examinations", id)).toBe(1);
+  });
+
+  it("0003 bisa dijalankan dua kali (Supabase Preview)", async () => {
+    await db.exec("reset role");
+    await db.exec(migrations[2]);
+    await as(U.care);
+    expect(await rows("select id from public.examinations")).toEqual([]);
   });
 });

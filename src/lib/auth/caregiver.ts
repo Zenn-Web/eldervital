@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
+import { clearOutbox } from "@/lib/exam/outbox";
 
 export interface CaregiverProfile {
   id: string;
@@ -40,8 +41,13 @@ export async function signInCaregiverWithGoogle(): Promise<void> {
   if (error) throw error;
 }
 
-/** Hanya perangkat ini yang keluar (scope "local"), sesi di perangkat lain tetap. */
+/**
+ * Hanya perangkat ini yang keluar (scope "local"), sesi di perangkat lain tetap.
+ * Antrean pemeriksaan caregiver yang belum terkirim ikut dibuang lebih dulu, supaya jawaban
+ * pemeriksaan tidak tertinggal di localStorage untuk pengguna perangkat berikutnya.
+ */
 export async function signOutCaregiver(): Promise<void> {
+  clearOutbox("caregiver");
   const { error } = await db().auth.signOut({ scope: "local" });
   if (error) throw error;
 }

@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { signInCaregiverWithGoogle } from "./caregiver";
+import { signInCaregiverWithGoogle, signOutCaregiver } from "./caregiver";
 
 const mocks = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
+  signOut: vi.fn(),
+  clearOutbox: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
-  getSupabase: () => ({ auth: { signInWithOAuth: mocks.signInWithOAuth } }),
+  getSupabase: () => ({ auth: { signInWithOAuth: mocks.signInWithOAuth, signOut: mocks.signOut } }),
 }));
+
+vi.mock("@/lib/exam/outbox", () => ({ clearOutbox: mocks.clearOutbox }));
 
 describe("signInCaregiverWithGoogle", () => {
   beforeEach(() => {
@@ -32,5 +36,33 @@ describe("signInCaregiverWithGoogle", () => {
     });
 
     await expect(signInCaregiverWithGoogle()).rejects.toThrow("Google provider belum aktif");
+  });
+});
+
+describe("signOutCaregiver", () => {
+  beforeEach(() => {
+    mocks.signOut.mockReset();
+    mocks.clearOutbox.mockReset();
+  });
+
+  it("membuang antrean caregiver sebelum sesi dihapus", async () => {
+    const order: string[] = [];
+    mocks.clearOutbox.mockImplementation(() => order.push("clear"));
+    mocks.signOut.mockImplementation(async () => {
+      order.push("signOut");
+      return { error: null };
+    });
+
+    await signOutCaregiver();
+
+    expect(mocks.clearOutbox).toHaveBeenCalledWith("caregiver");
+    expect(mocks.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(order).toEqual(["clear", "signOut"]);
+  });
+
+  it("antrean tetap dibuang walau Supabase gagal mengeluarkan sesi", async () => {
+    mocks.signOut.mockResolvedValue({ error: new Error("jaringan putus") });
+    await expect(signOutCaregiver()).rejects.toThrow("jaringan putus");
+    expect(mocks.clearOutbox).toHaveBeenCalledWith("caregiver");
   });
 });

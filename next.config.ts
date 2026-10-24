@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
+import { securityHeaders as buildSecurityHeaders } from "./src/lib/security/headers";
 
-const securityHeaders = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Mikrofon (jawaban suara) dan kamera (pindai QR) hanya untuk halaman ini sendiri.
-  { key: "Permissions-Policy", value: "microphone=(self), camera=(self), geolocation=()" },
-];
+// Dibaca saat build/start: URL Supabase harus sudah diisi di Vercel sebelum deploy.
+const securityHeaders = buildSecurityHeaders({
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  isDev: process.env.NODE_ENV === "development",
+});
 
 const nextConfig: NextConfig = {
   cacheComponents: true,

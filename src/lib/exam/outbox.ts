@@ -14,8 +14,9 @@ import type { SaveExaminationArgs } from "./payload";
  * karena id dibuat klien dan RPC-nya idempoten (on conflict do nothing).
  *
  * Konsekuensi privasi: selama belum terkirim, jawaban pemeriksaan tersimpan di
- * localStorage perangkat ini. Entri dihapus segera setelah berhasil terkirim, atau
- * bila server menolaknya (mis. hubungan caregiver sudah diputus).
+ * localStorage perangkat ini, TIDAK terenkripsi. Entri dihapus segera setelah berhasil
+ * terkirim, bila server menolaknya (mis. hubungan caregiver sudah diputus), saat caregiver
+ * keluar (signOutCaregiver), dan saat akun lain mulai memakai antrean ini (pruneOutbox).
  */
 
 export type SaveState =
@@ -52,9 +53,20 @@ function write(role: Role, entries: Entry[]) {
   }
 }
 
-/** Membuang seluruh antrean satu peran (mis. saat profil lansia dihapus). */
+/** Membuang seluruh antrean satu peran (mis. saat profil lansia dihapus atau caregiver keluar). */
 export function clearOutbox(role: Role): void {
   write(role, []);
+}
+
+/**
+ * Membuang entri milik akun lain. Dipanggil sebelum mengirim: bila akun berganti tanpa
+ * keluar lebih dulu (mis. masuk dengan akun Google lain), jawaban milik akun sebelumnya
+ * tidak dipertahankan di perangkat dan tidak pernah dikirim dengan sesi akun baru.
+ */
+export function pruneOutbox(role: Role, userId: string): void {
+  const entries = read(role);
+  const mine = entries.filter((e) => e.userId === userId);
+  if (mine.length !== entries.length) write(role, mine);
 }
 
 // ---------- Status per pemeriksaan (di memori, untuk tampilan) ----------
@@ -93,8 +105,9 @@ function retryable(error: unknown, status: number): boolean {
 
 async function flushOnce(role: Role, userId: string) {
   const db = getSupabase(role);
+  pruneOutbox(role, userId);
   for (const entry of read(role)) {
-    if (entry.userId !== userId) continue;
+    if (entry.userId !== userId) continue; // entri yang masuk dari tab lain selama putaran ini
     const id = entry.args.p_id;
     setState(id, { kind: "saving" });
     let error: unknown = null;

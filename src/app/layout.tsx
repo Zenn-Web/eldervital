@@ -3,6 +3,7 @@ import { Bitter } from "next/font/google";
 import localFont from "next/font/local";
 import RegisterSW from "@/components/RegisterSW";
 import DemoPanel from "@/components/DemoPanel";
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css";
 
 // Atkinson Hyperlegible Next (SIL OFL), disajikan dari server sendiri agar tetap

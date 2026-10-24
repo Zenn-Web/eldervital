@@ -44,3 +44,4 @@ next-env.d.ts
 
 # catatan kerja alat AI, bukan bagian aplikasi
 .superpowers/
+docs/superpowers/

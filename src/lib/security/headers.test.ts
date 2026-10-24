@@ -40,9 +40,11 @@ describe("header keamanan", () => {
     expect(directive(csp, "form-action")).toEqual(["'self'"]);
   });
 
-  it("unsafe-eval hanya saat pengembangan", () => {
-    expect(directive(contentSecurityPolicy({ isDev: false }), "script-src")).not.toContain("'unsafe-eval'");
-    expect(directive(contentSecurityPolicy({ isDev: true }), "script-src")).toContain("'unsafe-eval'");
+  it("unsafe-eval dan skrip debug Vercel Analytics hanya saat pengembangan", () => {
+    const prod = directive(contentSecurityPolicy({ isDev: false }), "script-src");
+    const dev = directive(contentSecurityPolicy({ isDev: true }), "script-src");
+    expect(prod).toEqual(["'self'", "'unsafe-inline'"]);
+    expect(dev).toEqual(expect.arrayContaining(["'unsafe-eval'", "https://va.vercel-scripts.com"]));
   });
 
   it("next.config memasang header ini di semua halaman", async () => {

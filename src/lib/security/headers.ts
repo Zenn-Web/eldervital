@@ -35,7 +35,13 @@ export function supabaseOrigins(supabaseUrl: string | undefined): string[] {
 export function contentSecurityPolicy({ supabaseUrl, isDev = false }: HeaderEnv): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
+    // Produksi: Vercel Analytics dimuat dari situs sendiri (/_vercel/insights). Saat `next dev`,
+    // paketnya memuat versi debug dari va.vercel-scripts.com, jadi hanya diizinkan di dev.
+    "script-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...(isDev ? ["'unsafe-eval'", "https://va.vercel-scripts.com"] : []),
+    ],
     "style-src": ["'self'", "'unsafe-inline'"],
     // data: untuk gambar QR (qrcode.toDataURL), blob: untuk bingkai kamera pemindai.
     "img-src": ["'self'", "data:", "blob:"],

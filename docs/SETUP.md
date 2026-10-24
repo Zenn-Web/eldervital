@@ -22,8 +22,11 @@ Buka http://localhost:3000. Kalau halaman muncul, template sudah benar.
    (dipakai perangkat lansia agar tidak perlu email). Provider **Email** tetap aktif
    untuk caregiver. Untuk demo, matikan "Confirm email" agar pendaftaran caregiver
    tidak menunggu surel.
-3. **SQL Editor > New query**: tempel isi `supabase/migrations/0001_init.sql`, klik **Run**.
-   Harus muncul "Success". Kalau error, kirim pesannya ke saya.
+3. **SQL Editor > New query**: jalankan setiap berkas di `supabase/migrations/` **berurutan**
+   (`0001_init.sql`, `0002_help_request_transitions.sql`, `0003_security_hardening.sql`):
+   tempel isinya, klik **Run**, harus muncul "Success". 0002 dan 0003 aman dijalankan ulang.
+   Merge ke `main` hanya mengubah kode; database tidak ikut berubah kecuali migrasi dijalankan.
+   Cara memastikan 0003 sudah berlaku ada di `docs/SECURITY.md`.
 4. **Project Settings > API Keys**: salin **Project URL** dan **Publishable key**.
    Jangan pernah memakai `service_role` / secret key di aplikasi.
 
@@ -58,8 +61,10 @@ Buka URL Vercel (HTTPS) di ponsel nyata, bukan emulator:
 
 ## Batasan yang perlu Anda tahu
 
-- Hasil skrining dihitung di perangkat lalu disimpan. Klien yang dimodifikasi bisa
-  menyimpan hasil yang tidak sesuai aturan. Untuk produksi, hitung ulang di server.
+- Hasil skrining dihitung di perangkat lalu disimpan. Sejak migrasi 0003, database menolak
+  payload yang bentuknya tidak sah atau tidak konsisten (lihat `docs/SECURITY.md`), tetapi
+  klien yang dimodifikasi masih bisa menyimpan hasil yang konsisten namun tidak sesuai
+  jawaban. Untuk produksi, hitung ulang di server.
 - Bila lansia menghapus data browser, sesi anonimnya hilang dan profil tidak bisa
   dipulihkan tanpa penghubungan ulang (spesifikasi bagian 5.3).
 - Konten klinis di `tree.v1.ts` harus ditinjau tenaga kesehatan sebelum dipakai nyata.
